@@ -8,3 +8,17 @@ dist/
 build/
 *.egg-info/
 outputs/
+
+# Large binary model weights — never committed; obtained via scripts/fetch_weights.py or DIMER snapshot upload
+weights/**/*.safetensors
+weights/*.safetensors
+weights/**/*.bin
+weights/*.bin
+weights/**/*.pt
+weights/*.pt
+weights/**/*.pth
+weights/*.pth
+weights/**/*.onnx
+weights/*.onnx
+weights/**/*.gguf
+weights/*.gguf

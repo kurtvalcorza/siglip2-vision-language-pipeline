@@ -77,8 +77,13 @@ class Siglip2Pipeline:
         *,
         device: str | torch.device | None = None,
         cache_dir: str | Path | None = None,
+        weights_path: str | Path | None = None,
     ) -> Siglip2Pipeline:
-        model, processor, target_device, _ = load_components(device=device, cache_dir=cache_dir)
+        model, processor, target_device, _ = load_components(
+            device=device,
+            cache_dir=cache_dir,
+            weights_path=weights_path,
+        )
         return cls(model, processor, device=target_device)
 
     def zero_shot_classify(
@@ -166,5 +171,10 @@ def load_pipeline(
     *,
     device: str | torch.device | None = None,
     cache_dir: str | Path | None = None,
+    weights_path: str | Path | None = None,
 ) -> Siglip2Pipeline:
-    return Siglip2Pipeline.from_pretrained(device=device, cache_dir=cache_dir)
+    return Siglip2Pipeline.from_pretrained(
+        device=device,
+        cache_dir=cache_dir,
+        weights_path=weights_path,
+    )
