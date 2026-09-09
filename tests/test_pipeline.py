@@ -11,7 +11,11 @@ from siglip2_pipeline import Siglip2Pipeline
 
 
 class FakeProcessor:
+    def __init__(self) -> None:
+        self.last_text = None
+
     def __call__(self, *, text=None, images=None, **kwargs):
+        self.last_text = text
         batch = {}
         if images is not None:
             batch["pixel_values"] = torch.ones((len(images), 1), dtype=torch.float32)
@@ -56,6 +60,18 @@ def test_zero_shot_classification_preserves_independent_sigmoid_scores():
     assert [item.label for item in result] == ["dog", "cat", "road"]
     assert result[0].score == pytest.approx(torch.sigmoid(torch.tensor(2.0)).item())
     assert not math.isclose(sum(item.score for item in result), 1.0)
+
+
+def test_siglip2_text_is_lowercased_without_changing_returned_label():
+    processor = FakeProcessor()
+    pipe = Siglip2Pipeline(FakeModel(), processor, device="cpu")
+
+    result = pipe.zero_shot_classify(_image(), ["Flooded Street"])
+    assert processor.last_text == ["this is a photo of flooded street."]
+    assert result[0].label == "Flooded Street"
+
+    pipe.embed_text(["Mixed CASE Query"])
+    assert processor.last_text == ["mixed case query"]
 
 
 def test_prompt_template_requires_label_placeholder():
