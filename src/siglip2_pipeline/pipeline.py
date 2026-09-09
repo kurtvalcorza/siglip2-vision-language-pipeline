@@ -50,6 +50,12 @@ def _require_texts(values: Sequence[str], *, name: str) -> list[str]:
     return result
 
 
+def _siglip2_texts(values: Sequence[str]) -> list[str]:
+    """Match SigLIP 2 training-time text lowercasing before tokenization."""
+
+    return [value.lower() for value in values]
+
+
 def _move_batch(batch: Any, device: torch.device) -> Any:
     if hasattr(batch, "to"):
         return batch.to(device)
@@ -88,7 +94,7 @@ class Siglip2Pipeline:
 
         prompts = [prompt_template.format(label=label) for label in labels_list]
         batch = self.processor(
-            text=prompts,
+            text=_siglip2_texts(prompts),
             images=[_coerce_image(image)],
             padding="max_length",
             max_length=TEXT_MAX_LENGTH,
@@ -121,7 +127,7 @@ class Siglip2Pipeline:
     def embed_text(self, texts: Sequence[str]) -> np.ndarray:
         texts_list = _require_texts(texts, name="texts")
         batch = self.processor(
-            text=texts_list,
+            text=_siglip2_texts(texts_list),
             padding="max_length",
             max_length=TEXT_MAX_LENGTH,
             return_tensors="pt",
