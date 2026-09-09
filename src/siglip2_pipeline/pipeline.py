@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 import torch
@@ -70,7 +71,7 @@ class Siglip2Pipeline:
         *,
         device: str | torch.device | None = None,
         cache_dir: str | Path | None = None,
-    ) -> "Siglip2Pipeline":
+    ) -> Siglip2Pipeline:
         model, processor, target_device, _ = load_components(device=device, cache_dir=cache_dir)
         return cls(model, processor, device=target_device)
 
