@@ -45,6 +45,19 @@ The default classification prompt is:
 
 Changing the prompt can change scores and must be treated as part of the inference configuration.
 
+### Text preprocessing contract
+
+SigLIP 2 training lowercased text before tokenization and used a maximum sequence length of 64. The pinned checkpoint currently declares a plain Gemma tokenizer in its tokenizer metadata, which may not apply the SigLIP 2 lowercasing behavior automatically. This pipeline therefore explicitly lowercases all model-bound text before processor/tokenizer invocation.
+
+The rule applies consistently to:
+
+- rendered zero-shot prompts;
+- `embed_text()` input;
+- text passed through `similarity()`;
+- retrieval queries.
+
+Caller-facing candidate-label strings are retained in their original form in returned classification results. This shim is part of the pinned-checkpoint inference contract and should be reevaluated if the hosted checkpoint/tokenizer metadata changes in a future model version.
+
 ### Embedding semantics
 
 Image and text features returned by the v1 pipeline are L2-normalized. `similarity()` and `retrieve()` therefore operate in cosine-similarity space through the dot product of normalized embeddings.
