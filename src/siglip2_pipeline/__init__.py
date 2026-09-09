@@ -1,10 +1,12 @@
 from .config import (
+    DEFAULT_MODEL_KEY,
     DEFAULT_PROMPT_TEMPLATE,
     MODEL_ID,
     MODEL_LICENSE,
     MODEL_REVISION,
     MODEL_SHA256,
     MODEL_SIZE_BYTES,
+    UNSAFE_WEIGHT_EXTENSIONS,
 )
 from .model import load_components, verify_checkpoint
 from .pipeline import (
@@ -18,6 +20,7 @@ from .provenance import build_provenance, write_provenance
 
 __all__ = [
     "ClassificationScore",
+    "DEFAULT_MODEL_KEY",
     "DEFAULT_PROMPT_TEMPLATE",
     "ImageInput",
     "MODEL_ID",
@@ -27,6 +30,7 @@ __all__ = [
     "MODEL_SIZE_BYTES",
     "RetrievalHit",
     "Siglip2Pipeline",
+    "UNSAFE_WEIGHT_EXTENSIONS",
     "build_provenance",
     "load_components",
     "load_pipeline",

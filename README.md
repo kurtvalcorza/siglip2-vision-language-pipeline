@@ -77,13 +77,14 @@ Retrieval v1 is text-to-image retrieval over an in-memory image list. It returns
 ## Machine-readable provenance
 
 ```python
-from siglip2_pipeline import build_provenance, write_provenance
+from siglip2_pipeline import build_provenance, load_pipeline, write_provenance
 
-record = build_provenance()
-write_provenance("outputs/provenance.json")
+pipe = load_pipeline()
+record = build_provenance(pipeline=pipe)
+write_provenance("outputs/provenance.json", pipeline=pipe)
 ```
 
-The record includes model ID, immutable revision, weight filename/SHA-256/size, processor contract, prompt template, score/embedding semantics, Python version, platform, and runtime package versions.
+The record includes model ID, immutable revision, weight filename/SHA-256/size, verified checkpoint source and path, processor contract, prompt template, score/embedding semantics, Python version, platform, and runtime package versions.
 
 ## Input safety
 
@@ -99,10 +100,11 @@ Remote `http://` and `https://` image strings are rejected intentionally. The pi
 
 `load_pipeline()`:
 
-1. downloads only an allowlisted set of checkpoint files at the pinned Hugging Face revision;
-2. requires `model.safetensors` and rejects pickle `.bin` weights;
-3. verifies the exact safetensors byte size and SHA-256 before model load;
-4. loads the verified local snapshot with `trust_remote_code=False`, `use_safetensors=True`, and `local_files_only=True`.
+1. resolves offline weights through `weights_path`, `SIGLIP2_WEIGHTS_DIR`, dev repo `weights/siglip2-base-patch16-224`, or pinned Hugging Face revision fallback;
+2. verifies snapshot files against `dimer-base-manifest.json` when present (checking hashes and sizes of configurations and weights);
+3. rejects unsafe serialized formats (`.bin`, `.pt`, `.pth`, `.ckpt`, `.pkl`, `.pickle`, `.h5`, `.msgpack`);
+4. verifies the exact safetensors byte size and SHA-256 before model load;
+5. loads the verified local snapshot with `trust_remote_code=False`, `use_safetensors=True`, and `local_files_only=True`.
 
 ## Reproducible reference environment
 
