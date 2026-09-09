@@ -8,23 +8,26 @@ license = { text = "MIT" }
 authors = [{ name = "Kurt Valcorza" }]
 keywords = ["siglip2", "vision-language", "zero-shot", "retrieval", "dimer"]
 dependencies = [
-    "huggingface-hub>=0.34.0,<1.0",
-    "numpy>=2.0,<3.0",
-    "pillow>=10.4,<12.0",
-    "safetensors>=0.5.0,<1.0",
-    "torch>=2.4,<3.0",
-    "transformers>=4.54.1,<5.0",
+    "huggingface-hub==0.36.2",
+    "numpy==2.5.3",
+    "pillow==11.3.0",
+    "safetensors==0.8.0",
+    "torch==2.14.0",
+    "transformers==4.57.6",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.3,<9", "ruff>=0.8,<1"]
+dev = ["pytest==8.4.2", "ruff==0.16.6"]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools==78.1.0"]
+build-backend = "setuptools.build_meta"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/siglip2_pipeline"]
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 line-length = 100

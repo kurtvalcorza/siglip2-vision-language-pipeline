@@ -60,16 +60,27 @@ def load_components(
     *,
     device: str | torch.device | None = None,
     cache_dir: str | Path | None = None,
+    weights_path: str | Path | None = None,
 ) -> tuple[Any, Any, torch.device, Path]:
     """Acquire, verify, and load the one supported SigLIP 2 checkpoint."""
 
-    snapshot_path = snapshot_download(
-        repo_id=MODEL_ID,
-        revision=MODEL_REVISION,
-        allow_patterns=list(ALLOWED_CHECKPOINT_FILES),
-        cache_dir=str(cache_dir) if cache_dir is not None else None,
-    )
-    verified = verify_checkpoint(snapshot_path)
+    if weights_path is not None:
+        candidate_path = Path(weights_path)
+    else:
+        repo_weights = Path(__file__).resolve().parents[2] / "weights" / "siglip2-base-patch16-224"
+        if (repo_weights / MODEL_FILENAME).is_file():
+            candidate_path = repo_weights
+        else:
+            candidate_path = Path(
+                snapshot_download(
+                    repo_id=MODEL_ID,
+                    revision=MODEL_REVISION,
+                    allow_patterns=list(ALLOWED_CHECKPOINT_FILES),
+                    cache_dir=str(cache_dir) if cache_dir is not None else None,
+                )
+            )
+
+    verified = verify_checkpoint(candidate_path)
     target_device = _resolve_device(device)
 
     processor = AutoProcessor.from_pretrained(

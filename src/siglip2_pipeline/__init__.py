@@ -14,6 +14,7 @@ from .pipeline import (
     Siglip2Pipeline,
     load_pipeline,
 )
+from .provenance import build_provenance, write_provenance
 
 __all__ = [
     "ClassificationScore",
@@ -26,7 +27,9 @@ __all__ = [
     "MODEL_SIZE_BYTES",
     "RetrievalHit",
     "Siglip2Pipeline",
+    "build_provenance",
     "load_components",
     "load_pipeline",
     "verify_checkpoint",
+    "write_provenance",
 ]
