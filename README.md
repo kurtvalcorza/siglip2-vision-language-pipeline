@@ -47,6 +47,12 @@ The default prompt template follows the upstream Transformers example:
 This is a photo of {label}.
 ```
 
+## Text preprocessing compatibility
+
+SigLIP 2 was trained with text lowercased before tokenization and a maximum text length of 64. The pinned checkpoint currently identifies a plain Gemma tokenizer in its tokenizer metadata, so v1 explicitly lowercases model-bound text before calling the processor. This compatibility shim applies to zero-shot prompts, text embeddings, similarity, and retrieval queries. Caller-facing labels are preserved exactly as supplied.
+
+This is an inference-compatibility rule for the hosted checkpoint, not a claim that case is semantically irrelevant in every downstream application.
+
 ## Embeddings and retrieval
 
 `embed_image()` and `embed_text()` return L2-normalized vectors. `similarity()` and `retrieve()` use cosine similarity through the dot product of those normalized vectors.
