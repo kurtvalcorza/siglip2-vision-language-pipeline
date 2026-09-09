@@ -6,14 +6,19 @@
   "revision": "5ffaac51d5e2f3367f7dab0cad4be4cb07c0caa2",
   "files": [
     {
-      "path": "config.json",
-      "bytes": 253,
-      "sha256": "fe8b5fe6d5734360678fd71c11c21e1ea3364bd8598d34295d9206335973ffd7"
-    },
-    {
       "path": "LICENSE",
       "bytes": 11343,
       "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+    },
+    {
+      "path": "README.md",
+      "bytes": 17268,
+      "sha256": "b7ab37d51f75f1b945689b3a880cab56d27543edee3f433c7f40a238bc989134"
+    },
+    {
+      "path": "config.json",
+      "bytes": 253,
+      "sha256": "fe8b5fe6d5734360678fd71c11c21e1ea3364bd8598d34295d9206335973ffd7"
     },
     {
       "path": "model.safetensors",
@@ -24,11 +29,6 @@
       "path": "preprocessor_config.json",
       "bytes": 394,
       "sha256": "9b36b57ebaf20f09bf4c22100ccc21877ea6bfe5aead0c00c59f8af8ccefacfc"
-    },
-    {
-      "path": "README.md",
-      "bytes": 17449,
-      "sha256": "5691c3622f38d1edb67838f91671682aae5a3a27526c690fbd62051820c89d4c"
     },
     {
       "path": "special_tokens_map.json",
@@ -51,5 +51,5 @@
       "sha256": "14afe629fe4959b9e0d51e1852b8d9f7ad074f90a1a7125a4fcdd17f06e78fc8"
     }
   ],
-  "totalBytes": 1539482185
+  "totalBytes": 1539482004
 }

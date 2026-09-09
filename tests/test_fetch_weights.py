@@ -22,6 +22,7 @@ from scripts.fetch_weights import (  # noqa: E402
 )
 
 from siglip2_pipeline.config import (  # noqa: E402
+    MODEL_FILENAME,
     MODEL_ID,
     MODEL_REVISION,
 )
@@ -117,4 +118,18 @@ def test_committed_base_model_snapshot_manifest_matches_weights():
     assert manifest_path.is_file(), f"Missing {MANIFEST_NAME} in {DEFAULT_DEST_DIR}"
 
     ok, errors = verify_snapshot(DEFAULT_DEST_DIR)
-    assert ok is True, f"Snapshot verification failed: {errors}"
+    if not (DEFAULT_DEST_DIR / MODEL_FILENAME).is_file():
+        # In CI/fresh clone without weights downloaded,
+        # only model.safetensors and total bytes should mismatch
+        assert ok is False
+        assert any("Missing file: model.safetensors" in err for err in errors)
+        non_weight_errors = [
+            err
+            for err in errors
+            if "model.safetensors" not in err and "Total bytes mismatch" not in err
+        ]
+        assert (
+            non_weight_errors == []
+        ), f"Unexpected config/tokenizer errors in manifest: {non_weight_errors}"
+    else:
+        assert ok is True, f"Snapshot verification failed: {errors}"
