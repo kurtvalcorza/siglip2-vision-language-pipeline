@@ -49,45 +49,37 @@ Changing the prompt can change scores and must be treated as part of the inferen
 
 SigLIP 2 training lowercased text before tokenization and used a maximum sequence length of 64. The pinned checkpoint currently declares a plain Gemma tokenizer in its tokenizer metadata, which may not apply the SigLIP 2 lowercasing behavior automatically. This pipeline therefore explicitly lowercases all model-bound text before processor/tokenizer invocation.
 
-The rule applies consistently to:
-
-- rendered zero-shot prompts;
-- `embed_text()` input;
-- text passed through `similarity()`;
-- retrieval queries.
-
-Caller-facing candidate-label strings are retained in their original form in returned classification results. This shim is part of the pinned-checkpoint inference contract and should be reevaluated if the hosted checkpoint/tokenizer metadata changes in a future model version.
+The rule applies consistently to rendered zero-shot prompts, `embed_text()` input, text passed through `similarity()`, and retrieval queries. Caller-facing candidate-label strings are retained in their original form in returned classification results.
 
 ### Embedding semantics
 
-Image and text features returned by the v1 pipeline are L2-normalized. `similarity()` and `retrieve()` therefore operate in cosine-similarity space through the dot product of normalized embeddings.
+Image and text features returned by the v1 pipeline are L2-normalized. `similarity()` and `retrieve()` operate in cosine-similarity space through the dot product of normalized embeddings.
 
 Embedding similarity is representation similarity, not a guarantee of semantic correctness, factuality, identity, or suitability for a downstream decision.
 
+### Reproducibility and provenance
+
+The v1 repository provides:
+
+- exact direct/dev/build pins in `pyproject.toml`;
+- a fully version-pinned Linux/CPU reference graph in `requirements.lock.txt`;
+- lock-parity CI;
+- deterministic generated synthetic PPM tutorial assets with SHA-256 manifests;
+- machine-readable provenance export through `build_provenance()` / `write_provenance()`;
+- a live Colab notebook that covers all five public operations;
+- a `main` CI gate configured to execute the notebook against the real pinned checkpoint and upload output artifacts.
+
+The requirements file is a version lock rather than a cryptographic hash lock. The model weights themselves are independently pinned by immutable revision, expected byte size, and SHA-256.
+
 ### Intended uses
 
-Appropriate uses include:
-
-- zero-shot image categorization where candidate concepts are supplied at inference time;
-- semantic image search;
-- image-text retrieval;
-- image and text feature extraction for downstream experimentation;
-- comparative vision-language similarity analysis;
-- prototyping domain-specific image organization and triage workflows.
+Appropriate uses include zero-shot image categorization, semantic image search, image-text retrieval, image and text feature extraction, comparative vision-language similarity analysis, and prototyping domain-specific image organization or triage workflows.
 
 For consequential deployments, candidate labels, prompts, operating thresholds, subgroup behavior, and domain performance must be evaluated on representative local data.
 
 ### Out-of-scope claims
 
-The hosted checkpoint is not exposed as:
-
-- an object detector;
-- a semantic-segmentation model;
-- an image-caption generator;
-- an OCR engine;
-- a calibrated probabilistic classifier;
-- an identity-recognition system;
-- a universal content-safety classifier.
+The hosted checkpoint is not exposed as an object detector, semantic-segmentation model, image-caption generator, OCR engine, calibrated probabilistic classifier, identity-recognition system, or universal content-safety classifier.
 
 Downstream heads or separate models are required for detection and segmentation. Generative captioning requires a generative multimodal model rather than this encoder-only pipeline.
 
@@ -113,10 +105,12 @@ The byte digest and immutable revision establish the intended hosted weight arti
 
 Zero-shot performance is prompt- and domain-dependent. Similar-looking concepts, fine-grained classes, culturally specific concepts, small visual details, text-heavy images, distribution shift, and safety-critical edge cases may produce unreliable rankings. Multilingual capability does not imply uniform quality across languages or domains.
 
-The fixed 224 x 224 v1 processor can lose fine detail or distort task-relevant spatial information relative to higher-resolution or NaFlex variants. This tradeoff is deliberate for the initial hosted checkpoint and should be reevaluated for applications that depend on document layout, small objects, or fine-grained localization.
+The fixed 224 x 224 v1 processor can lose fine detail or distort task-relevant spatial information relative to higher-resolution or NaFlex variants.
+
+The synthetic tutorial samples are smoke assets only. Their behavior must not be interpreted as model accuracy or domain validation.
 
 ### Development status
 
-**Status: v1 developer preview.**
+**Status: v1 release candidate.**
 
-The repository provides a tested inference contract and a real-checkpoint smoke path. Production DIMER worker packaging, service-level resource limits, latency/SLO characterization, concurrency policy, observability, and deployment hardening remain separate serving-readiness work.
+The repository has a tested inference contract, a real-checkpoint CPU smoke path, reproducible reference environment, deterministic tutorial assets, and machine-readable provenance. Live tutorial execution on post-merge `main` remains the acceptance gate before this release candidate should be described as tutorial-ready. Production DIMER worker packaging, service-level resource limits, latency/SLO characterization, concurrency policy, observability, and deployment hardening remain separate serving-readiness work.
