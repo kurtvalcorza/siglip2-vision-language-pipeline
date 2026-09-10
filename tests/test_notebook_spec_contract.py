@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = ROOT / "tutorials" / "siglip2_vision_language_colab.ipynb"
 REGISTRY = ROOT / "tutorials" / "README.md"
+LOCKFILE = ROOT / "requirements.lock.txt"
 
 EXPECTED_OUTPUTS = {
     "classification.json",
@@ -91,6 +92,19 @@ def test_release_notebook_prints_runtime_and_immutable_identity() -> None:
     )
     for marker in required:
         assert marker in source
+
+
+def test_release_notebook_matches_cpu_reference_lock() -> None:
+    source = _source_text(_load_notebook())
+    registry = REGISTRY.read_text(encoding="utf-8")
+    lockfile = LOCKFILE.read_text(encoding="utf-8")
+
+    assert "torch==2.14.0+cpu" in lockfile
+    assert 'DEVICE = "cpu"' in source
+    assert "CPU-only" in source
+    assert "CPU-only reference" in registry
+    assert "CUDA optional" not in registry
+    assert "torch.cuda.is_available()" not in source
 
 
 def test_release_notebook_source_is_clean() -> None:
