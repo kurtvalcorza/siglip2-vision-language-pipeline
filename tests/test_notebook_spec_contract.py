@@ -31,6 +31,10 @@ def _source_text(notebook: dict) -> str:
     )
 
 
+def _normalized_source(notebook: dict) -> str:
+    return " ".join(_source_text(notebook).split())
+
+
 def test_release_notebook_declares_multi_capability_profile() -> None:
     notebook = _load_notebook()
     dimer = notebook["metadata"]["dimer"]
@@ -43,7 +47,7 @@ def test_release_notebook_declares_multi_capability_profile() -> None:
 
 
 def test_release_notebook_has_required_learning_contract_markers() -> None:
-    source = _source_text(_load_notebook())
+    source = _normalized_source(_load_notebook())
     required = (
         "No gradient training, fine-tuning, in-context conditioning",
         "object detection",
