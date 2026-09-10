@@ -60,6 +60,9 @@ Optional BYOD execution additionally writes `byod_classification.json` and `byod
 
 The `main` workflow executes the notebook top-to-bottom against the real pinned checkpoint and uploads its outputs as an artifact. The default sample images are synthetic smoke assets and are not an accuracy benchmark or production-fitness evidence.
 
+See [`tutorials/README.md`](tutorials/README.md#supplemental-kaggle-verification)
+for the latest supplemental Kaggle clean-runtime evidence and its scope.
+
 ## Score semantics
 
 SigLIP uses independent sigmoid scores for image-text pairs. `zero_shot_classify()` therefore returns one sigmoid score per candidate label and **does not softmax-normalize across labels**. Scores do not need to sum to 1. They should be interpreted comparatively and validated for the deployment domain rather than as calibrated class probabilities.
