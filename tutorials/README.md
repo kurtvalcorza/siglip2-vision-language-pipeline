@@ -4,7 +4,7 @@ Notebook specification: **DIMER Notebook Specification v1.0**
 
 | Notebook | Profile | Capability | Default runtime | BYOD | Release status |
 |---|---|---|---|---|---|
-| `siglip2_vision_language_colab.ipynb` | `MULTI-CAPABILITY` | zero-shot classification, image/text embeddings, similarity, text-to-image retrieval | Python 3.12; CPU supported, CUDA optional | Optional, gated | release candidate |
+| `siglip2_vision_language_colab.ipynb` | `MULTI-CAPABILITY` | zero-shot classification, image/text embeddings, similarity, text-to-image retrieval | Python 3.12; CPU-only reference (GPU out of scope) | Optional, gated | release candidate |
 
 ## Learning contract
 
@@ -13,6 +13,11 @@ API against the one immutable `google/siglip2-base-patch16-224` checkpoint.
 It performs pretrained inference only: no gradient training, fine-tuning,
 in-context conditioning, or fitted preprocessing state occurs.
 
+The frozen release-reference environment installs the official CPU-only PyTorch
+wheel, so the notebook intentionally executes on CPU even when a GPU is present.
+GPU execution requires a separately pinned and tested environment and is outside
+this tutorial's validated release contract.
+
 The default path uses deterministic synthetic images so the notebook remains
 non-interactive and reproducible. BYOD is available as an explicitly gated
 Colab upload or local Jupyter path.
@@ -20,7 +25,7 @@ Colab upload or local Jupyter path.
 ## Release verification
 
 The repository CI performs static notebook JSON/Python-cell validation on pull
-requests. On `main`, the integration job installs the frozen Python 3.12
+requests. On `main`, the integration job installs the frozen Python 3.12 CPU
 reference environment, exercises the real pinned checkpoint, executes the
 tutorial top-to-bottom, and uploads the tutorial outputs.
 
