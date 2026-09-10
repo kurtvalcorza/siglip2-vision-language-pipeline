@@ -66,10 +66,26 @@ def _move_batch(batch: Any, device: torch.device) -> Any:
 
 
 class Siglip2Pipeline:
-    def __init__(self, model: Any, processor: Any, *, device: str | torch.device = "cpu") -> None:
+    def __init__(
+        self,
+        model: Any,
+        processor: Any,
+        *,
+        device: str | torch.device = "cpu",
+        checkpoint_path: Path | str | None = None,
+        checkpoint_source: str | None = None,
+        manifest_verified: bool = False,
+        weight_sha256: str | None = None,
+        weight_size_bytes: int | None = None,
+    ) -> None:
         self.model = model
         self.processor = processor
         self.device = torch.device(device)
+        self.checkpoint_path = Path(checkpoint_path) if checkpoint_path is not None else None
+        self.checkpoint_source = checkpoint_source
+        self.manifest_verified = manifest_verified
+        self.weight_sha256 = weight_sha256
+        self.weight_size_bytes = weight_size_bytes
 
     @classmethod
     def from_pretrained(
@@ -79,12 +95,22 @@ class Siglip2Pipeline:
         cache_dir: str | Path | None = None,
         weights_path: str | Path | None = None,
     ) -> Siglip2Pipeline:
-        model, processor, target_device, _ = load_components(
+        model, processor, target_device, _, metadata = load_components(
             device=device,
             cache_dir=cache_dir,
             weights_path=weights_path,
+            return_metadata=True,
         )
-        return cls(model, processor, device=target_device)
+        return cls(
+            model,
+            processor,
+            device=target_device,
+            checkpoint_path=metadata.get("checkpoint_path"),
+            checkpoint_source=metadata.get("checkpoint_source"),
+            manifest_verified=metadata.get("manifest_verified", False),
+            weight_sha256=metadata.get("weight_sha256"),
+            weight_size_bytes=metadata.get("weight_size_bytes"),
+        )
 
     def zero_shot_classify(
         self,
@@ -93,11 +119,16 @@ class Siglip2Pipeline:
         *,
         prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
     ) -> list[ClassificationScore]:
-        labels_list = _require_texts(labels, name="labels")
+        if not labels:
+            raise ValueError("labels must contain at least one non-empty string")
+        original_labels = list(labels)
+        cleaned_labels = [label.strip() for label in original_labels]
+        if any(not label for label in cleaned_labels):
+            raise ValueError("labels must contain at least one non-empty string")
         if "{label}" not in prompt_template:
             raise ValueError("prompt_template must contain the literal {label} placeholder")
 
-        prompts = [prompt_template.format(label=label) for label in labels_list]
+        prompts = [prompt_template.format(label=label) for label in cleaned_labels]
         batch = self.processor(
             text=_siglip2_texts(prompts),
             images=[_coerce_image(image)],
@@ -111,8 +142,8 @@ class Siglip2Pipeline:
             scores = torch.sigmoid(logits).detach().cpu().tolist()
 
         ranked = [
-            ClassificationScore(label=label, score=float(score))
-            for label, score in zip(labels_list, scores, strict=True)
+            ClassificationScore(label=orig_label, score=float(score))
+            for orig_label, score in zip(original_labels, scores, strict=True)
         ]
         return sorted(ranked, key=lambda item: item.score, reverse=True)
 
@@ -163,7 +194,7 @@ class Siglip2Pipeline:
             raise ValueError("images must contain at least one image")
 
         scores = self.similarity(images, [query])[:, 0]
-        order = np.argsort(-scores)[: min(top_k, len(images))]
+        order = np.argsort(-scores, kind="stable")[: min(top_k, len(images))]
         return [RetrievalHit(index=int(index), score=float(scores[index])) for index in order]
 
 

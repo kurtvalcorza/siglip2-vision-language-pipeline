@@ -116,3 +116,34 @@ def test_empty_inputs_are_rejected():
         pipe.retrieve("query", [], top_k=1)
     with pytest.raises(ValueError):
         pipe.retrieve("query", [_image()], top_k=0)
+
+
+def test_zero_shot_classification_preserves_label_exact_whitespace():
+    processor = FakeProcessor()
+    pipe = Siglip2Pipeline(FakeModel(), processor, device="cpu")
+
+    result = pipe.zero_shot_classify(_image(), ["  Flooded Street  ", "\tRural Road\n"])
+    assert processor.last_text == [
+        "this is a photo of flooded street.",
+        "this is a photo of rural road.",
+    ]
+    returned_labels = {item.label for item in result}
+    assert returned_labels == {"  Flooded Street  ", "\tRural Road\n"}
+
+
+def test_retrieval_tie_breaking_is_deterministic_and_stable():
+    class EqualScoreModel(FakeModel):
+        def get_image_features(self, **batch):
+            count = batch["pixel_values"].shape[0]
+            return torch.tensor([[1.0, 0.0]] * count, dtype=torch.float32)
+
+        def get_text_features(self, **batch):
+            count = batch["input_ids"].shape[0]
+            return torch.tensor([[1.0, 0.0]] * count, dtype=torch.float32)
+
+    pipe = Siglip2Pipeline(EqualScoreModel(), FakeProcessor(), device="cpu")
+    images = [_image(), _image(), _image(), _image()]
+    hits = pipe.retrieve("query", images, top_k=4)
+    assert [hit.index for hit in hits] == [0, 1, 2, 3]
+    assert all(hit.score == pytest.approx(1.0) for hit in hits)
+

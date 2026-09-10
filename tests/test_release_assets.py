@@ -6,10 +6,17 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 from PIL import Image
 
-from siglip2_pipeline import MODEL_ID, MODEL_REVISION, MODEL_SHA256, build_provenance
+from siglip2_pipeline import (
+    MODEL_ID,
+    MODEL_REVISION,
+    MODEL_SHA256,
+    build_provenance,
+    write_provenance,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_SPEC = ROOT / "examples" / "sample-data"
@@ -53,6 +60,28 @@ def test_provenance_identity_and_semantics() -> None:
     assert record["processor"]["lowercase_model_bound_text"] is True
     assert record["inference"]["zero_shot_score_semantics"].startswith("independent_sigmoid")
     assert record["inference"]["embedding_normalization"] == "l2"
+
+
+def test_provenance_records_actual_pipeline_metadata(tmp_path: Path) -> None:
+    fake_pipeline = SimpleNamespace(
+        checkpoint_path=tmp_path / "custom_weights",
+        checkpoint_source="explicit_path",
+        manifest_verified=True,
+        weight_sha256="fake_sha256_digest",
+        weight_size_bytes=1234567,
+        device="cuda:0",
+    )
+
+    out_file = tmp_path / "provenance.json"
+    write_provenance(out_file, pipeline=fake_pipeline)
+    data = json.loads(out_file.read_text(encoding="utf-8"))
+
+    assert data["model"]["checkpoint_source"] == "explicit_path"
+    assert data["model"]["checkpoint_path"] == str(tmp_path / "custom_weights")
+    assert data["model"]["manifest_verified"] is True
+    assert data["model"]["weight_sha256"] == "fake_sha256_digest"
+    assert data["model"]["weight_size_bytes"] == 1234567
+    assert data["inference"]["device"] == "cuda:0"
 
 
 def test_colab_notebook_is_json_and_python_cells_compile() -> None:

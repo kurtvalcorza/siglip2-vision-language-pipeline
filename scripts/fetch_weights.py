@@ -24,6 +24,7 @@ import argparse
 import fnmatch
 import hashlib
 import json
+import shutil
 import sys
 import zipfile
 from pathlib import Path
@@ -35,11 +36,14 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from siglip2_pipeline.config import (  # noqa: E402
+    DEFAULT_MODEL_KEY,
+    MODEL_FILENAME,
     MODEL_ID,
     MODEL_REVISION,
+    MODEL_SHA256,
+    MODEL_SIZE_BYTES,
 )
 
-DEFAULT_MODEL_KEY = "siglip2-base-patch16-224"
 DEFAULT_DEST_DIR = ROOT / "weights" / DEFAULT_MODEL_KEY
 
 MANIFEST_NAME = "dimer-base-manifest.json"
@@ -144,6 +148,8 @@ def verify_snapshot(
     expected_model_key: str = DEFAULT_MODEL_KEY,
     expected_model_id: str = MODEL_ID,
     expected_revision: str = MODEL_REVISION,
+    expected_weight_bytes: int = MODEL_SIZE_BYTES,
+    expected_weight_sha256: str = MODEL_SHA256,
 ) -> tuple[bool, list[str]]:
     """Verify a snapshot directory against its dimer-base-manifest.json.
 
@@ -194,6 +200,18 @@ def verify_snapshot(
         expected_bytes = record.get("bytes")
         expected_sha256 = record.get("sha256")
 
+        if path_str == MODEL_FILENAME:
+            if expected_bytes != expected_weight_bytes:
+                errors.append(
+                    f"Manifest {MODEL_FILENAME} bytes ({expected_bytes}) != "
+                    f"config {expected_weight_bytes}"
+                )
+            if expected_sha256 != expected_weight_sha256:
+                errors.append(
+                    f"Manifest {MODEL_FILENAME} sha256 ({expected_sha256}) != "
+                    f"config {expected_weight_sha256}"
+                )
+
         if path_str not in actual_files:
             errors.append(f"Missing file: {path_str}")
             continue
@@ -214,6 +232,18 @@ def verify_snapshot(
                 f"SHA-256 mismatch for {path_str}: {actual_sha256} != {expected_sha256} expected"
             )
 
+        if path_str == MODEL_FILENAME:
+            if actual_size != expected_weight_bytes:
+                errors.append(
+                    f"Actual {MODEL_FILENAME} size ({actual_size}) != "
+                    f"config {expected_weight_bytes}"
+                )
+            if actual_sha256 != expected_weight_sha256:
+                errors.append(
+                    f"Actual {MODEL_FILENAME} sha256 ({actual_sha256}) != "
+                    f"config {expected_weight_sha256}"
+                )
+
     expected_total_bytes = manifest.get("totalBytes")
     if expected_total_bytes is not None and total_actual_bytes != expected_total_bytes:
         errors.append(
@@ -233,10 +263,23 @@ def fetch_model(
     dest_dir: Path,
     dry_run: bool = False,
     force: bool = False,
+    write_manifest: bool = False,
 ) -> bool:
     """Download and verify the SigLIP 2 model checkpoint."""
     dest_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = dest_dir / MANIFEST_NAME
+    committed_manifest_path = DEFAULT_DEST_DIR / MANIFEST_NAME
+
+    if not manifest_path.is_file():
+        if committed_manifest_path.is_file():
+            shutil.copy2(committed_manifest_path, manifest_path)
+            print(f"Copied base manifest to: {manifest_path}")
+        elif not write_manifest:
+            print(
+                f"Error: Expected manifest {committed_manifest_path} not found and "
+                "--write-manifest not specified."
+            )
+            return False
 
     api = HfApi()
     all_repo_files = api.list_repo_files(MODEL_ID, revision=MODEL_REVISION)
@@ -267,14 +310,15 @@ def fetch_model(
         )
         print(f"Saved: {downloaded}")
 
-    manifest_data = generate_manifest(
-        dest_dir,
-        model_key=DEFAULT_MODEL_KEY,
-        model_id=MODEL_ID,
-        revision=MODEL_REVISION,
-    )
-    manifest_path.write_text(json.dumps(manifest_data, indent=2) + "\n", encoding="utf-8")
-    print(f"Wrote manifest: {manifest_path}")
+    if write_manifest:
+        manifest_data = generate_manifest(
+            dest_dir,
+            model_key=DEFAULT_MODEL_KEY,
+            model_id=MODEL_ID,
+            revision=MODEL_REVISION,
+        )
+        manifest_path.write_text(json.dumps(manifest_data, indent=2) + "\n", encoding="utf-8")
+        print(f"Wrote manifest: {manifest_path}")
 
     ok, errors = verify_snapshot(dest_dir)
     if not ok:
@@ -283,7 +327,10 @@ def fetch_model(
             print(f"  - {err}")
         return False
 
-    print(f"Snapshot verified successfully! Total bytes: {manifest_data['totalBytes']:,}")
+    total_bytes = sum(
+        p.stat().st_size for p in dest_dir.iterdir() if p.is_file() and p.name != MANIFEST_NAME
+    )
+    print(f"Snapshot verified successfully! Total bytes: {total_bytes:,}")
     return True
 
 
@@ -325,6 +372,11 @@ def main() -> int:
         help="Force re-download and overwrite existing files.",
     )
     parser.add_argument(
+        "--write-manifest",
+        action="store_true",
+        help="Generate dimer-base-manifest.json from downloaded files (maintainers only).",
+    )
+    parser.add_argument(
         "--zip",
         type=Path,
         default=None,
@@ -350,7 +402,12 @@ def main() -> int:
                 print(f"  - {err}")
             return 1
 
-    success = fetch_model(dest, dry_run=args.dry_run, force=args.force)
+    success = fetch_model(
+        dest,
+        dry_run=args.dry_run,
+        force=args.force,
+        write_manifest=args.write_manifest,
+    )
     if not success:
         return 1
 

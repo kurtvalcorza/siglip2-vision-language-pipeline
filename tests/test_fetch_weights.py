@@ -50,11 +50,14 @@ def test_matches_patterns():
 
 
 def test_generate_manifest_and_verify_snapshot(tmp_path: Path):
+    import hashlib
+
     file_a = tmp_path / "config.json"
     file_a.write_text('{"test": true}', encoding="utf-8")
 
     file_b = tmp_path / "model.safetensors"
-    file_b.write_bytes(b"dummy safetensors content")
+    content = b"dummy safetensors content"
+    file_b.write_bytes(content)
 
     manifest = generate_manifest(
         tmp_path,
@@ -75,7 +78,11 @@ def test_generate_manifest_and_verify_snapshot(tmp_path: Path):
     manifest_path = tmp_path / MANIFEST_NAME
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
-    ok, errors = verify_snapshot(tmp_path)
+    ok, errors = verify_snapshot(
+        tmp_path,
+        expected_weight_bytes=len(content),
+        expected_weight_sha256=hashlib.sha256(content).hexdigest(),
+    )
     assert ok is True
     assert errors == []
 
@@ -133,3 +140,76 @@ def test_committed_base_model_snapshot_manifest_matches_weights():
         ), f"Unexpected config/tokenizer errors in manifest: {non_weight_errors}"
     else:
         assert ok is True, f"Snapshot verification failed: {errors}"
+
+
+def test_verify_snapshot_enforces_pinned_model_safetensors_config_constants(tmp_path: Path):
+    from siglip2_pipeline.config import MODEL_SHA256, MODEL_SIZE_BYTES
+
+    weight = tmp_path / MODEL_FILENAME
+    weight.write_bytes(b"dummy-wrong-content")
+
+    # Manifest matches disk but mismatches config constants
+    manifest = {
+        "format": MANIFEST_FORMAT,
+        "formatVersion": MANIFEST_FORMAT_VERSION,
+        "modelKey": DEFAULT_MODEL_KEY,
+        "modelId": MODEL_ID,
+        "revision": MODEL_REVISION,
+        "files": [
+            {
+                "path": MODEL_FILENAME,
+                "bytes": weight.stat().st_size,
+                "sha256": "wronghash",
+            }
+        ],
+        "totalBytes": weight.stat().st_size,
+    }
+    (tmp_path / MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+
+    ok, errors = verify_snapshot(tmp_path)
+    assert ok is False
+    assert any(str(MODEL_SIZE_BYTES) in err for err in errors)
+    assert any(MODEL_SHA256 in err for err in errors)
+
+
+def test_fetch_model_fails_when_download_mismatches_expected_manifest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    from scripts.fetch_weights import fetch_model
+
+    manifest = {
+        "format": MANIFEST_FORMAT,
+        "formatVersion": MANIFEST_FORMAT_VERSION,
+        "modelKey": DEFAULT_MODEL_KEY,
+        "modelId": MODEL_ID,
+        "revision": MODEL_REVISION,
+        "files": [
+            {
+                "path": "config.json",
+                "bytes": 100,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            }
+        ],
+        "totalBytes": 100,
+    }
+    manifest_path = tmp_path / MANIFEST_NAME
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    # Mock HfApi and hf_hub_download to simulate downloading a different/tampered file
+    class FakeHfApi:
+        def list_repo_files(self, repo_id, revision=None):
+            return ["config.json"]
+
+    def fake_hf_download(repo_id, filename, revision=None, local_dir=None, **kwargs):
+        out = Path(local_dir) / filename
+        out.write_text('{"tampered": true}', encoding="utf-8")
+        return str(out)
+
+    monkeypatch.setattr("scripts.fetch_weights.HfApi", FakeHfApi)
+    monkeypatch.setattr("scripts.fetch_weights.hf_hub_download", fake_hf_download)
+
+    # fetch_model without write_manifest must NOT overwrite manifest and must fail verification
+    success = fetch_model(tmp_path, write_manifest=False)
+    assert success is False
+
