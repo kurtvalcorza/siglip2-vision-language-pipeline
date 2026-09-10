@@ -15,7 +15,7 @@ The wrapper code in this repository is MIT licensed. The model weights retain Go
 
 ## Status
 
-**v1 release candidate.** The core inference contract and the real pinned checkpoint have been exercised on CPU CI. The live tutorial becomes release evidence only after its post-merge `main` execution gate passes. Production HTTP serving / DIMER worker packaging remains a separate serving-readiness milestone.
+**v1 release candidate.** The core inference contract and the real pinned checkpoint have been exercised on CPU CI. The tutorial source conforms to the DIMER Notebook Specification v1.0 `MULTI-CAPABILITY` profile; each merged notebook revision becomes release evidence only after its post-merge `main` clean-runtime execution gate passes. Production HTTP serving / DIMER worker packaging remains a separate serving-readiness milestone.
 
 ## v1 capabilities
 
@@ -45,14 +45,20 @@ Public operations:
 
 ## Live tutorial
 
-The Colab notebook exercises all five public operations against deterministic generated sample images and writes:
+The Colab notebook is registered as `MULTI-CAPABILITY` in [`tutorials/README.md`](tutorials/README.md). It exercises all five public operations against deterministic generated sample images, provides a gated BYOD/new-image path, reports synthetic tutorial sanity metrics, and writes:
 
 - `classification.json`
-- `retrieval.json`
+- `image_embeddings.npz`
+- `text_embeddings.npz`
 - `similarity.csv`
+- `retrieval.json`
+- `metrics.json`
+- `new_data_classification.json`
 - `provenance.json`
 
-The `main` workflow is configured to execute the same notebook top-to-bottom against the real pinned checkpoint and upload its outputs as an artifact. The sample images are synthetic smoke assets and are not an accuracy benchmark.
+Optional BYOD execution additionally writes `byod_classification.json` and `byod_image_embedding.npz`.
+
+The `main` workflow executes the notebook top-to-bottom against the real pinned checkpoint and uploads its outputs as an artifact. The default sample images are synthetic smoke assets and are not an accuracy benchmark or production-fitness evidence.
 
 ## Score semantics
 
