@@ -33,6 +33,31 @@ A notebook revision is release-ready only after the corresponding `main`
 integration execution succeeds. Pull-request static checks alone are not
 execution evidence.
 
+## Supplemental Kaggle verification
+
+On 2026-09-11 PHT, a private CPU Kaggle kernel independently executed the
+tutorial at the immutable post-merge commit below. This is supplemental
+clean-runtime evidence; the public `main` integration workflow remains the
+canonical release gate.
+
+| Evidence | Verified value |
+|---|---|
+| Repository commit | [`23bae80c427a1f01058ec4884db061335a2cafc0`](https://github.com/kurtvalcorza/siglip2-vision-language-pipeline/commit/23bae80c427a1f01058ec4884db061335a2cafc0) |
+| Public `main` integration | [GitHub Actions run 34485799429](https://github.com/kurtvalcorza/siglip2-vision-language-pipeline/actions/runs/34485799429), `success` |
+| Kaggle execution | [`kurtvalcorza/tut-siglip2-verify`, version 6](https://www.kaggle.com/code/kurtvalcorza/tut-siglip2-verify), `COMPLETE` (private; owner access required) |
+| Runtime | Python 3.12.13; PyTorch 2.14.0+cpu; Transformers 4.57.6; 4-vCPU Kaggle worker |
+| Notebook SHA-256 | `6ccf86e91c686d727c27eb1e9d4970abdd5bde608dbf4614ee4d8ed41f7600a1` |
+| Checkpoint verification | pinned revision `5ffaac51d5e2f3367f7dab0cad4be4cb07c0caa2`; weight SHA-256 `612923381c76ec5a9bed335d1c48827e3f2e506ac31b044b63b2031fadee6a0b`; manifest verified |
+| Notebook result | 6 of 6 code cells passed; exit code 0; all 8 required artifacts written |
+| Synthetic sanity checks | top-1 accuracy `1.0`; retrieval recall@1 `1.0`; classification matches `3/3` |
+
+Kaggle version 5 also completed all notebook cells, but its external wrapper
+expected the previous four-item classification output and produced a false
+terminal error. Version 6 updated that assertion to the current three-record
+schema. [Issue #7](https://github.com/kurtvalcorza/siglip2-vision-language-pipeline/issues/7)
+tracks moving the verifier into the repository so its contract cannot drift
+silently from the tutorial.
+
 ## Applicable SHOULD deviations
 
 - **§20.8 real-image verification:** the default automated path intentionally
