@@ -8,13 +8,25 @@ from .config import (
     MODEL_SIZE_BYTES,
     UNSAFE_WEIGHT_EXTENSIONS,
 )
-from .model import load_components, verify_checkpoint
+from .model import (
+    DEFAULT_WEIGHTS_DIR,
+    MANIFEST_NAME,
+    load_components,
+    stage_missing_files,
+    verify_checkpoint,
+    verify_snapshot,
+)
 from .pipeline import (
+    INPUT_SCHEMA,
     ClassificationScore,
     ImageInput,
     RetrievalHit,
     Siglip2Pipeline,
+    evaluation_report,
     load_pipeline,
+    recall_at_1,
+    top1_accuracy,
+    validate_inputs,
 )
 from .provenance import build_provenance, write_provenance
 
@@ -22,7 +34,10 @@ __all__ = [
     "ClassificationScore",
     "DEFAULT_MODEL_KEY",
     "DEFAULT_PROMPT_TEMPLATE",
+    "DEFAULT_WEIGHTS_DIR",
+    "INPUT_SCHEMA",
     "ImageInput",
+    "MANIFEST_NAME",
     "MODEL_ID",
     "MODEL_LICENSE",
     "MODEL_REVISION",
@@ -32,8 +47,14 @@ __all__ = [
     "Siglip2Pipeline",
     "UNSAFE_WEIGHT_EXTENSIONS",
     "build_provenance",
+    "evaluation_report",
     "load_components",
     "load_pipeline",
+    "recall_at_1",
+    "stage_missing_files",
+    "top1_accuracy",
+    "validate_inputs",
     "verify_checkpoint",
+    "verify_snapshot",
     "write_provenance",
 ]

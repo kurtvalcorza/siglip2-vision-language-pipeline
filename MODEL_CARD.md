@@ -70,7 +70,7 @@ This section details performance metrics, decision thresholds, and uncertainty m
 
 ###### Performance Measures
 
-The pipeline reports raw sigmoid classification scores (`scores = torch.sigmoid(logits)`) bounded in `[0.0, 1.0]` for zero-shot classification, and dot-product cosine similarity bounded in `[-1.0, 1.0]` for embedding retrieval. In technical benchmarks, model quality is quantified via top-1 and top-5 zero-shot classification accuracy across standard benchmarks (e.g., ImageNet-1k, ImageNet-A/R), Mean Average Precision (mAP), and Recall@k (R@1, R@5, R@10) on cross-modal retrieval benchmarks (e.g., MS-COCO, Flickr30k). Classification scores are chosen over softmax probabilities because SigLIP's pretraining formulation optimizes independent sigmoid loss over positive and negative pairs, allowing multi-label co-occurrence and avoiding competitive normalization artifacts.
+The pipeline reports raw sigmoid classification scores (`scores = torch.sigmoid(logits)`) bounded in `[0.0, 1.0]` for zero-shot classification, and dot-product cosine similarity bounded in `[-1.0, 1.0]` for embedding retrieval. In technical benchmarks, model quality is quantified via top-1 and top-5 zero-shot classification accuracy across standard benchmarks (e.g., ImageNet-1k, ImageNet-A/R), Mean Average Precision (mAP), and Recall@k (R@1, R@5, R@10) on cross-modal retrieval benchmarks (e.g., MS-COCO, Flickr30k). Classification scores are chosen over softmax probabilities because SigLIP's pretraining formulation optimizes independent sigmoid loss over positive and negative pairs, allowing multi-label co-occurrence and avoiding competitive normalization artifacts. The public `evaluation_report` helper packages the tutorial's `top1_accuracy` (against a fixed-class baseline) and `recall_at_1` sanity metrics into a machine-readable report whose verdict is `sample-sanity` on the synthetic set and `not-measurable` when no expected labels exist.
 
 ###### Decision thresholds
 
@@ -99,7 +99,7 @@ SigLIP 2 is an exploratory vision-language encoder and is **not** certified, tes
 This repository enforces concrete, inspectable architectural and supply-chain mitigations:
 1. **Cryptographic supply-chain locking:** Pinned to immutable commit `5ffaac51d5e2f3367f7dab0cad4be4cb07c0caa2`, verifying exact safetensors byte size (`1,500,800,904`) and SHA-256 (`612923381c76ec5a9bed335d1c48827e3f2e506ac31b044b63b2031fadee6a0b`) prior to instantiation.
 2. **Pickle execution refusal:** Scans the snapshot tree and raises a fatal `RuntimeError` if any `*.bin` weight file is detected.
-3. **SSRF protection:** Rejects remote `http://` and `https://` image paths at the API boundary, accepting only validated local filesystem paths, in-memory bytes, or PIL images.
+3. **SSRF protection:** Rejects remote `http://` and `https://` image paths at the API boundary, accepting only validated local filesystem paths, in-memory bytes, or PIL images. The public `validate_inputs` helper applies exactly these input checks and returns an input manifest of the schema, ceilings, per-image observations and verdict before the model runs.
 4. **Fidelity preprocessing shim:** Explicitly lowercases model-bound text prompts before tokenization to match upstream SigLIP 2 training conventions, while preserving caller label casing in returned outputs.
 5. **Deterministic normalization:** Enforces explicit L2 normalization on image and text feature embeddings before cosine scoring.
 
