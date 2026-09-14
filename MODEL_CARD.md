@@ -12,7 +12,7 @@ date_published: "2025-02-17"
 date_published_source: "Hugging Face Hub repository creation date of the exact hosted checkpoint (`createdAt`, https://huggingface.co/api/models/google/siglip2-base-patch16-224)"
 ---
 
-# SigLIP 2 Base Patch16 224 (v1.0)
+# SigLIP 2 Base Patch16 224
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-google%2Fsiglip2--base--patch16--224-ffcc4d?style=flat)](https://huggingface.co/google/siglip2-base-patch16-224)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
