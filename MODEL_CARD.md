@@ -2,6 +2,7 @@
 license: Apache-2.0
 model_card_spec: "1.1"
 pipeline_tag: zero-shot-image-classification
+task: "Others - Vision-Language Embedding"
 tags:
   - vision-language
   - zero-shot-image-classification
