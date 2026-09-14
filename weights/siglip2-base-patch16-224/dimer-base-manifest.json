@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "README.md",
-      "bytes": 17268,
-      "sha256": "b7ab37d51f75f1b945689b3a880cab56d27543edee3f433c7f40a238bc989134"
+      "bytes": 3367,
+      "sha256": "77fd3e4cc34abaa0cf891f03fc73be58cd0e36ce09741cb0fe096342e4d8867f"
     },
     {
       "path": "config.json",
@@ -46,5 +46,5 @@
       "sha256": "14afe629fe4959b9e0d51e1852b8d9f7ad074f90a1a7125a4fcdd17f06e78fc8"
     }
   ],
-  "totalBytes": 1539470661
+  "totalBytes": 1539456760
 }
