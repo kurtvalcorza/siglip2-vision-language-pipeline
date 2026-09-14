@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,10 @@ from .config import (
 )
 
 MANIFEST_NAME = "dimer-base-manifest.json"
+#: Fleet snapshot scheme (DIMER NOTEBOOK_SPEC 1.1 MOD13): the pinned files live in a repository-
+#: local snapshot directory named by the model key and described by the committed manifest; a
+#: standalone notebook carries that manifest inline and stages/verifies a working-directory copy.
+DEFAULT_WEIGHTS_DIR = Path(__file__).resolve().parents[2] / "weights" / DEFAULT_MODEL_KEY
 
 
 def _sha256(path: Path) -> str:
@@ -105,6 +110,75 @@ def verify_checkpoint(
     if return_manifest_verified:
         return root, manifest_verified
     return root
+
+
+def _read_manifest(root: Path) -> dict[str, Any]:
+    """Load and identity-check ``<root>/dimer-base-manifest.json``."""
+    manifest_path = root / MANIFEST_NAME
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"snapshot manifest not found: {manifest_path}")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise RuntimeError(f"Corrupt manifest {MANIFEST_NAME}: {exc}") from exc
+    if manifest.get("modelId") != MODEL_ID or manifest.get("revision") != MODEL_REVISION:
+        raise ValueError(
+            f"manifest names {manifest.get('modelId')}@{manifest.get('revision')}, "
+            f"package pins {MODEL_ID}@{MODEL_REVISION}; refusing"
+        )
+    if not manifest.get("files"):
+        raise RuntimeError(f"Manifest {MANIFEST_NAME} contains no files")
+    return manifest
+
+
+def verify_snapshot(path: str | Path | None = None) -> dict[str, Any]:
+    """Manifest-driven verification of a fleet snapshot directory; raise on the first mismatch.
+
+    The identity in the manifest must be the pinned one; every manifest entry is then size- and
+    SHA-256-checked by :func:`verify_checkpoint` (the existing verifier, which also asserts the
+    weight file's pinned digest and byte count and refuses unsafe formats). Returns
+    ``{"path": ..., **manifest}``.
+    """
+    root = Path(path) if path is not None else DEFAULT_WEIGHTS_DIR
+    manifest = _read_manifest(root)
+    _, manifest_verified = verify_checkpoint(
+        root, require_configs=True, return_manifest_verified=True
+    )
+    if not manifest_verified:
+        raise RuntimeError(f"manifest at {root} was not verified")  # pragma: no cover
+    return {"path": str(root), **manifest}
+
+
+def _hub_download(relative_path: str, root: Path) -> None:
+    """Fetch one manifest-listed file at MODEL_REVISION straight into the snapshot directory."""
+    from huggingface_hub import hf_hub_download
+
+    hf_hub_download(MODEL_ID, relative_path, revision=MODEL_REVISION, local_dir=str(root))
+
+
+def stage_missing_files(
+    path: str | Path | None = None,
+    *,
+    allow_download: bool = False,
+    downloader: Callable[[str, Path], None] | None = None,
+) -> list[str]:
+    """Fetch manifest-listed files that are absent locally (a fresh clone commits the manifest and
+    the small files but git-ignores the weights). Returns the relative paths fetched;
+    :func:`verify_snapshot` still runs after."""
+    root = Path(path) if path is not None else DEFAULT_WEIGHTS_DIR
+    manifest = _read_manifest(root)
+    missing = [entry["path"] for entry in manifest["files"] if not (root / entry["path"]).is_file()]
+    if not missing:
+        return []
+    if not allow_download:
+        raise FileNotFoundError(
+            f"snapshot at {root} is missing {missing}; "
+            f"pass allow_download=True to fetch them at {MODEL_REVISION}"
+        )
+    fetch = downloader or _hub_download
+    for relative_path in missing:
+        fetch(relative_path, root)
+    return missing
 
 
 def resolve_weights_path(

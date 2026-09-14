@@ -1,12 +1,15 @@
 ---
 license: Apache-2.0
-model_card_spec: "1.0"
+model_card_spec: "1.1"
+pipeline_tag: zero-shot-image-classification
 tags:
   - vision-language
   - zero-shot-image-classification
   - image-text-retrieval
   - embeddings
 base_model: google/siglip2-base-patch16-224
+date_published: "2025-02-17"
+date_published_source: "Hugging Face Hub repository creation date of the exact hosted checkpoint (`createdAt`, https://huggingface.co/api/models/google/siglip2-base-patch16-224)"
 ---
 
 # SigLIP 2 Base Patch16 224 (v1.0)
@@ -15,7 +18,7 @@ base_model: google/siglip2-base-patch16-224
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Pipeline License: MIT](https://img.shields.io/badge/Pipeline%20License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-###### Description
+#### Description
 
 SigLIP 2 Base Patch16 224 is an open-weight multilingual vision-language dual-encoder foundation model developed by Google (`google/siglip2-base-patch16-224`, pinned revision `5ffaac51d5e2f3367f7dab0cad4be4cb07c0caa2`), packaged by this repository as a verified DIMER inference pipeline. Built with separate vision and text Transformer towers (~375.2M parameters in `model.safetensors`), it maps raw images and text sequences into a unified 768-dimensional representation space. At inference time, the model functions strictly as an encoder: zero-shot classification is achieved by computing pairwise sigmoid cross-entropy scores between a candidate image and prompt-expanded text strings, while retrieval and similarity operate via dot-product cosine distance across L2-normalized embedding vectors. Adaptation occurs purely through inference-time prompt conditioning without parameter updating. This repository contributes a hardened supply-chain wrapper: cryptographic SHA-256 and byte-size verification before loading, complete exclusion of unsafe pickle (`.bin`) checkpoints, local-only snapshot execution (`trust_remote_code=False`), automated text lowercasing to preserve SigLIP 2 training fidelity, strict rejection of remote HTTP(S) image fetches to prevent SSRF, and full provenance tracking.
 
@@ -70,7 +73,7 @@ This section details performance metrics, decision thresholds, and uncertainty m
 
 ###### Performance Measures
 
-The pipeline reports raw sigmoid classification scores (`scores = torch.sigmoid(logits)`) bounded in `[0.0, 1.0]` for zero-shot classification, and dot-product cosine similarity bounded in `[-1.0, 1.0]` for embedding retrieval. In technical benchmarks, model quality is quantified via top-1 and top-5 zero-shot classification accuracy across standard benchmarks (e.g., ImageNet-1k, ImageNet-A/R), Mean Average Precision (mAP), and Recall@k (R@1, R@5, R@10) on cross-modal retrieval benchmarks (e.g., MS-COCO, Flickr30k). Classification scores are chosen over softmax probabilities because SigLIP's pretraining formulation optimizes independent sigmoid loss over positive and negative pairs, allowing multi-label co-occurrence and avoiding competitive normalization artifacts.
+The pipeline reports raw sigmoid classification scores (`scores = torch.sigmoid(logits)`) bounded in `[0.0, 1.0]` for zero-shot classification, and dot-product cosine similarity bounded in `[-1.0, 1.0]` for embedding retrieval. In technical benchmarks, model quality is quantified via top-1 and top-5 zero-shot classification accuracy across standard benchmarks (e.g., ImageNet-1k, ImageNet-A/R), Mean Average Precision (mAP), and Recall@k (R@1, R@5, R@10) on cross-modal retrieval benchmarks (e.g., MS-COCO, Flickr30k). Classification scores are chosen over softmax probabilities because SigLIP's pretraining formulation optimizes independent sigmoid loss over positive and negative pairs, allowing multi-label co-occurrence and avoiding competitive normalization artifacts. The public `evaluation_report` helper packages the tutorial's `top1_accuracy` (against a fixed-class baseline) and `recall_at_1` sanity metrics into a machine-readable report whose verdict is `sample-sanity` on the synthetic set and `not-measurable` when no expected labels exist.
 
 ###### Decision thresholds
 
@@ -99,7 +102,7 @@ SigLIP 2 is an exploratory vision-language encoder and is **not** certified, tes
 This repository enforces concrete, inspectable architectural and supply-chain mitigations:
 1. **Cryptographic supply-chain locking:** Pinned to immutable commit `5ffaac51d5e2f3367f7dab0cad4be4cb07c0caa2`, verifying exact safetensors byte size (`1,500,800,904`) and SHA-256 (`612923381c76ec5a9bed335d1c48827e3f2e506ac31b044b63b2031fadee6a0b`) prior to instantiation.
 2. **Pickle execution refusal:** Scans the snapshot tree and raises a fatal `RuntimeError` if any `*.bin` weight file is detected.
-3. **SSRF protection:** Rejects remote `http://` and `https://` image paths at the API boundary, accepting only validated local filesystem paths, in-memory bytes, or PIL images.
+3. **SSRF protection:** Rejects remote `http://` and `https://` image paths at the API boundary, accepting only validated local filesystem paths, in-memory bytes, or PIL images. The public `validate_inputs` helper applies exactly these input checks and returns an input manifest of the schema, ceilings, per-image observations and verdict before the model runs.
 4. **Fidelity preprocessing shim:** Explicitly lowercases model-bound text prompts before tokenization to match upstream SigLIP 2 training conventions, while preserving caller label casing in returned outputs.
 5. **Deterministic normalization:** Enforces explicit L2 normalization on image and text feature embeddings before cosine scoring.
 

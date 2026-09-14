@@ -39,7 +39,8 @@ def test_release_notebook_declares_multi_capability_profile() -> None:
     notebook = _load_notebook()
     dimer = notebook["metadata"]["dimer"]
     assert dimer["notebook_profile"] == "MULTI-CAPABILITY"
-    assert dimer["notebook_spec_version"] == "1.0"
+    assert dimer["notebook_spec"] == "2.0"
+    assert dimer["standalone"] is True  # NOTEBOOK_SPEC 2.0 §4; parity in test_notebook_parity.py
 
     registry = REGISTRY.read_text(encoding="utf-8")
     assert "siglip2_vision_language_colab.ipynb" in registry
@@ -57,7 +58,7 @@ def test_release_notebook_has_required_learning_contract_markers() -> None:
         "not calibrated probabilities",
         "downstream application",
         "synthetic tutorial/smoke assets",
-        "## Interpretation, limits, and next steps",
+        "## Interpretation and limits",
     )
     for marker in required:
         assert marker in source
@@ -65,7 +66,7 @@ def test_release_notebook_has_required_learning_contract_markers() -> None:
 
 def test_release_notebook_has_gated_byod_and_new_data_paths() -> None:
     source = _source_text(_load_notebook())
-    assert "ENABLE_BYOD = False" in source
+    assert "USE_BYOD = False" in source
     assert "colab_files.upload()" in source
     assert "BYOD_PATH" in source
     assert "BYOD file is not a decodable image" in source
@@ -104,11 +105,13 @@ def test_release_notebook_matches_cpu_reference_lock() -> None:
     lockfile = LOCKFILE.read_text(encoding="utf-8")
 
     assert "torch==2.14.0+cpu" in lockfile
-    assert 'DEVICE = "cpu"' in source
+    # The standalone carrier pins the model load to CPU in the load expression; the generator-owned
+    # install cell reports CUDA availability as runtime identity only, so the old negative assertion
+    # on `torch.cuda.is_available()` no longer applies.
+    assert 'from_pretrained(device="cpu", weights_dir=WEIGHTS_DIR)' in source
     assert "CPU-only" in source
     assert "CPU-only reference" in registry
     assert "CUDA optional" not in registry
-    assert "torch.cuda.is_available()" not in source
 
 
 def test_release_notebook_source_is_clean() -> None:

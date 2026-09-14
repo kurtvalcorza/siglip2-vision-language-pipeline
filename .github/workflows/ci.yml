@@ -24,9 +24,13 @@ jobs:
       - name: Lock parity
         run: python scripts/check_lock.py
       - name: Ruff
-        run: ruff check .
+        run: ruff check src tests tools scripts
       - name: Unit and contract tests
         run: pytest -m 'not integration' -q
+      - name: Validate tutorial and model-card source
+        run: python tools/validate_release_assets.py
+      - name: Standalone notebook parity (NOTEBOOK_SPEC 1.1 PAR3)
+        run: python tools/build_notebook.py --check
 
   integration:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
@@ -53,7 +57,13 @@ jobs:
         run: python scripts/check_lock.py
       - name: Real pinned checkpoint smoke test
         run: pytest -m integration -q
+      # The notebook is standalone (NOTEBOOK_SPEC 1.1 §3.6): it carries the package and pins its own
+      # runtime. DIMER_NOTEBOOK_CI_PREINSTALLED=1 skips the inline pip install so the frozen CPU
+      # reference environment above stays the runtime; the notebook stages the weights itself into
+      # weights/siglip2-base-patch16-224/ (the committed small files are already there).
       - name: Execute live tutorial top-to-bottom
+        env:
+          DIMER_NOTEBOOK_CI_PREINSTALLED: '1'
         run: python tools/run_notebook.py tutorials/siglip2_vision_language_colab.ipynb
       - name: Upload tutorial outputs
         uses: actions/upload-artifact@v4
