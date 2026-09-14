@@ -12,11 +12,30 @@ date_published: "2025-02-17"
 date_published_source: "Hugging Face Hub repository creation date of the exact hosted checkpoint (`createdAt`, https://huggingface.co/api/models/google/siglip2-base-patch16-224)"
 ---
 
-# SigLIP 2 Base Patch16 224
+# SigLIP 2 Base Patch16 224 — Vision-Language Encoder (Zero-Shot Classification, Embeddings & Retrieval)
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-google%2Fsiglip2--base--patch16--224-ffcc4d?style=flat)](https://huggingface.co/google/siglip2-base-patch16-224)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Pipeline License: MIT](https://img.shields.io/badge/Pipeline%20License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Upstream GitHub](https://img.shields.io/badge/Upstream%20GitHub-google--research%2Fbig__vision-181717?style=flat&logo=github&logoColor=white)](https://github.com/google-research/big_vision)
+[![arXiv Paper](https://img.shields.io/badge/arXiv-2502.14786-b31b1b.svg)](https://arxiv.org/abs/2502.14786)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+> [!WARNING]
+> ⚠️ **Provided for research, training, and evaluation purposes only.** Model weights are redistributed unmodified under their upstream license, which controls your use, including any commercial use or redistribution; the accompanying code and notebooks are released under this repository's license. All of it is supplied **"as is"**, without warranty of any kind, and has not been validated for production, clinical, or safety-critical use. Running the notebooks downloads third-party weights and datasets governed by their own licenses and consumes compute on your own Colab/Kaggle account. To the maximum extent permitted by law, the maintainers of this repository and the DIMER platform accept no liability for any damages arising from their use. Hosting implies no affiliation with or endorsement by the original authors.
+
+---
+
+## Interactive Colab Tutorials
+
+This repository ships standalone Google Colab tutorials that exercise its public pipeline API:
+
+- **Multi-Capability Inference Tutorial**: \
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/siglip2-vision-language-pipeline/blob/main/tutorials/siglip2_vision_language_colab.ipynb) [`siglip2_vision_language_colab.ipynb`](https://github.com/kurtvalcorza/siglip2-vision-language-pipeline/blob/main/tutorials/siglip2_vision_language_colab.ipynb) \
+  *Verify the pinned SigLIP 2 weights, validate deterministic synthetic images or an uploaded image, run zero-shot classification, extract image and text embeddings, compute cosine similarity, and inspect text-to-image retrieval and sample-sanity reports.*
+
+> [!NOTE]
+> Use the pinned CPU-only reference runtime specified by the notebook. These tutorials remain release candidates; see [release verification](docs/release-verification.md) for execution records and promotion requirements.
+
+---
 
 #### Description
 
