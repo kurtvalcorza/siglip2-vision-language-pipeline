@@ -106,13 +106,11 @@ they are measurements for the stated runtime, not general estimates.
 ### Manual clean-runtime evidence
 
 | Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
-|---|---|---|---|---|---|
-| | | | Default sample path | | pending — queued to the GPU lane |
+| 2026-09-14 | `0266f18` / blob `d8c19e7f4b8e` | Kaggle CPU (`kurtvalcorza/dimer-nb2-siglip2-vision-language` v3) | Default sample path, all 14 code cells | 268.5 s | **PASS** — 14/14 ok (1 restart after install cell), 18 files, 1539 MB staged |
 
 ## Current status
 
-No clean-runtime execution of the standalone notebook has been recorded yet; the run is **pending** and queued
-to the GPU lane. Static validation (`tools/validate_release_assets.py`), nbformat validation, a
+A clean-runtime execution of the standalone notebook is recorded above (Kaggle CPU, 268.5 s, 14/14 ok, kernel `dimer-nb2-siglip2-vision-language` v3). Static validation (`tools/validate_release_assets.py`), nbformat validation, a
 `compile()` sweep over every code cell, and the offline unit suite passed on the tutorial source at
 the candidate revision, which is necessary but not sufficient. The registry status remains
 **Candidate** until a reviewer confirms a recorded run against the notebook blob under review and
