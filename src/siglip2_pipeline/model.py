@@ -92,9 +92,7 @@ def verify_checkpoint(
 
     size = weight_path.stat().st_size
     if size != MODEL_SIZE_BYTES:
-        raise RuntimeError(
-            f"Unexpected {MODEL_FILENAME} size: {size}; expected {MODEL_SIZE_BYTES}"
-        )
+        raise RuntimeError(f"Unexpected {MODEL_FILENAME} size: {size}; expected {MODEL_SIZE_BYTES}")
 
     digest = _sha256(weight_path)
     if digest != MODEL_SHA256:

@@ -32,13 +32,18 @@ def _pipeline() -> Siglip2Pipeline:
 
 
 def test_validate_inputs_returns_manifest_with_schema_and_identity() -> None:
-    manifest = validate_inputs([_image(), _image(16)], ["red square", "green circle"], top_k=2, names=["a", "b"])
+    manifest = validate_inputs(
+        [_image(), _image(16)], ["red square", "green circle"], top_k=2, names=["a", "b"]
+    )
     assert manifest["verdict"] == "accepted"
     assert manifest["findings"] == []
     assert manifest["schema"] == INPUT_SCHEMA
     assert manifest["schema"]["text_max_length"] == TEXT_MAX_LENGTH
     assert manifest["schema"]["prompt_template"] == DEFAULT_PROMPT_TEMPLATE
-    assert manifest["inputs"] == [{"id": "a", "mode": "RGB", "size": [8, 8]}, {"id": "b", "mode": "RGB", "size": [16, 16]}]
+    assert manifest["inputs"] == [
+        {"id": "a", "mode": "RGB", "size": [8, 8]},
+        {"id": "b", "mode": "RGB", "size": [16, 16]},
+    ]
     assert manifest["texts"] == ["red square", "green circle"]
     assert manifest["top_k"] == 2
     assert (manifest["model_id"], manifest["model_revision"]) == (MODEL_ID, MODEL_REVISION)
@@ -58,7 +63,9 @@ def test_validate_inputs_rejects_like_the_core_methods() -> None:
         pipe.zero_shot_classify("https://example.com/x.png", ["a"])
     assert str(via_helper.value) == str(via_core.value)
 
-    with pytest.raises(ValueError, match="labels must contain at least one non-empty string") as via_helper:
+    with pytest.raises(
+        ValueError, match="labels must contain at least one non-empty string"
+    ) as via_helper:
         validate_inputs(_image(), [])
     with pytest.raises(ValueError) as via_core:
         pipe.zero_shot_classify(_image(), [])
@@ -104,7 +111,9 @@ def test_top1_accuracy_and_recall_at_1_are_the_tutorial_sanity_metrics() -> None
 
 
 def test_evaluation_report_not_measurable_without_targets() -> None:
-    report = evaluation_report({"classifications": [_scores("a", "b")], "embedding_shapes": {"image": [1, 768]}})
+    report = evaluation_report(
+        {"classifications": [_scores("a", "b")], "embedding_shapes": {"image": [1, 768]}}
+    )
     assert report["verdict"] == "not-measurable"
     assert report["metrics"] == [] and report["baselines"] == []
     assert "top1_accuracy" in report["needs"] and "recall_at_1" in report["needs"]
@@ -114,18 +123,33 @@ def test_evaluation_report_not_measurable_without_targets() -> None:
 
 def test_evaluation_report_sample_sanity_with_labels_and_retrieval_indices() -> None:
     result = {
-        "classifications": [_scores("red", "green", "blue", "other"), _scores("green", "red", "blue", "other"), _scores("red", "blue", "green", "other")],
+        "classifications": [
+            _scores("red", "green", "blue", "other"),
+            _scores("green", "red", "blue", "other"),
+            _scores("red", "blue", "green", "other"),
+        ],
         "retrievals": [_hits(0, 1, 2), _hits(1, 0, 2), _hits(2, 0, 1)],
         "gallery_ids": ["r", "g", "b"],
     }
-    report = evaluation_report(result, {"labels": ["red", "green", "blue"], "retrieval_indices": [0, 1, 2]}, sample_kind="synthetic")
+    report = evaluation_report(
+        result,
+        {"labels": ["red", "green", "blue"], "retrieval_indices": [0, 1, 2]},
+        sample_kind="synthetic",
+    )
     assert report["verdict"] == "sample-sanity"
     by_id = {m["id"]: m for m in report["metrics"]}
     assert by_id["top1_accuracy"]["value"] == pytest.approx(2 / 3)
     assert by_id["top1_accuracy"]["n_candidate_labels"] == 4
     assert by_id["recall_at_1"]["value"] == 1.0
     assert by_id["recall_at_1"]["n_gallery_images"] == 3
-    assert report["baselines"] == [{"id": "fixed_class_baseline", "metric": "top1_accuracy", "value": 0.25, "note": "always predicting one fixed candidate label"}]
+    assert report["baselines"] == [
+        {
+            "id": "fixed_class_baseline",
+            "metric": "top1_accuracy",
+            "value": 0.25,
+            "note": "always predicting one fixed candidate label",
+        }
+    ]
     assert all(m["estimation"] for m in report["metrics"])
 
 

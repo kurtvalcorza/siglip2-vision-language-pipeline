@@ -1,6 +1,10 @@
+# ruff: noqa: E501  -- adaptation contract written at the 110-column fleet width; this repo lints at 100
 from __future__ import annotations
 
-from collections.abc import Sequence
+import json
+import math
+import time
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
@@ -11,7 +15,15 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
-from .config import DEFAULT_PROMPT_TEMPLATE, MODEL_ID, MODEL_REVISION, TEXT_MAX_LENGTH
+from .config import (
+    DEFAULT_MODEL_KEY,
+    DEFAULT_PROMPT_TEMPLATE,
+    MODEL_FILENAME,
+    MODEL_ID,
+    MODEL_REVISION,
+    MODEL_SHA256,
+    TEXT_MAX_LENGTH,
+)
 from .model import load_components, stage_missing_files, verify_snapshot
 
 ImageInput = str | Path | bytes | Image.Image
@@ -60,9 +72,106 @@ def _move_batch(batch: Any, device: torch.device) -> Any:
     if hasattr(batch, "to"):
         return batch.to(device)
     return {
-        key: value.to(device) if hasattr(value, "to") else value
-        for key, value in batch.items()
+        key: value.to(device) if hasattr(value, "to") else value for key, value in batch.items()
     }
+
+
+# --------------------------------------------------------------------------
+# Adaptation contract (E2E): bounded fine-tuning of the vision tower's last blocks for a labelled
+# photograph set, scored through the same zero-shot prompts the frozen model is scored with.
+# --------------------------------------------------------------------------
+
+PARAMETER_COUNT = 375_187_970
+VISION_LAYERS = 12  # vision_config num_hidden_layers
+DEFAULT_TRAINABLE_VISION_LAYERS = (
+    2  # the last two vision blocks + post-layernorm + attention-pool head (21,264,384 params)
+)
+MAX_EVAL_RECORDS = 20_000
+MIN_SCORED_RECORDS = 50  # below this a scored set is labelled a small sample
+ARTIFACT_FORMAT = "org.valcorza.siglip2-base-patch16-224.adapter.v1"
+ARTIFACT_FORMAT_VERSION = "1.0"
+ARTIFACT_WEIGHTS_NAME = "adapter.safetensors"
+ARTIFACT_MANIFEST_NAME = "manifest.json"
+
+
+def _sha256_file(path: Path) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _prompts(
+    classes: Sequence[str], prompt_template: str, names: Mapping[str, str] | None
+) -> list[str]:
+    if "{label}" not in prompt_template:
+        raise ValueError("prompt_template must contain the literal {label} placeholder")
+    return [prompt_template.format(label=(names or {}).get(c, c)) for c in classes]
+
+
+def _trainable_names(model: Any, trainable_vision_layers: int) -> list[str]:
+    """The last `trainable_vision_layers` blocks of the vision tower, its post-layernorm and its
+    attention-pool head. The text tower, the embeddings, `logit_scale` and `logit_bias` stay frozen."""
+    if (
+        isinstance(trainable_vision_layers, bool)
+        or not isinstance(trainable_vision_layers, int)
+        or not 1 <= trainable_vision_layers <= VISION_LAYERS
+    ):
+        raise ValueError(f"trainable_vision_layers must be an int in 1..{VISION_LAYERS}")
+    first = VISION_LAYERS - trainable_vision_layers
+    prefixes = tuple(f"vision_model.encoder.layers.{k}." for k in range(first, VISION_LAYERS)) + (
+        "vision_model.post_layernorm.",
+        "vision_model.head.",
+    )
+    return [name for name, _p in model.named_parameters() if name.startswith(prefixes)]
+
+
+def _check_artifact_manifest(root: Path, manifest: Mapping[str, Any]) -> Path:
+    """Refuse an artifact whose manifest is not exactly the one this package writes: the supported format
+    and version, the pinned base (id, revision, weight file, digest), exactly one file entry named
+    `adapter.safetensors` that resolves inside the artifact directory, and a recorded
+    `trainable_vision_layers` in range. Nothing is deserialised here. The digest check that follows detects
+    corruption or drift of the weights relative to the adjacent manifest; it is not authenticity against an
+    actor who can replace both files."""
+    if manifest.get("format") != ARTIFACT_FORMAT:
+        raise ValueError(f"artifact format {manifest.get('format')!r} != {ARTIFACT_FORMAT!r}")
+    if manifest.get("format_version") != ARTIFACT_FORMAT_VERSION:
+        raise ValueError(
+            f"artifact format_version {manifest.get('format_version')!r} is not the supported "
+            f"{ARTIFACT_FORMAT_VERSION!r}"
+        )
+    base = manifest.get("base_model", {})
+    if (base.get("id"), base.get("revision"), base.get("weight_sha256")) != (
+        MODEL_ID,
+        MODEL_REVISION,
+        MODEL_SHA256,
+    ):
+        raise ValueError(
+            "artifact was adapted from a different base model, revision or weight file"
+        )
+    if base.get("weight_file", MODEL_FILENAME) != MODEL_FILENAME:
+        raise ValueError("artifact was adapted from a different base weight file")
+    files = manifest.get("files")
+    if not isinstance(files, list) or len(files) != 1:
+        raise ValueError("artifact manifest must list exactly one file")
+    entry = files[0]
+    if not isinstance(entry, Mapping) or entry.get("path") != ARTIFACT_WEIGHTS_NAME:
+        raise ValueError(f"artifact manifest must name exactly {ARTIFACT_WEIGHTS_NAME!r}")
+    weights_path = (root / entry["path"]).resolve()
+    if weights_path.parent != root.resolve():
+        raise ValueError("artifact weight path must resolve inside the artifact directory")
+    adapter = manifest.get("adapter")
+    layers = adapter.get("trainable_vision_layers") if isinstance(adapter, Mapping) else None
+    if isinstance(layers, bool) or not isinstance(layers, int) or not 1 <= layers <= VISION_LAYERS:
+        raise ValueError(
+            "artifact manifest does not record an in-range integer trainable_vision_layers"
+        )
+    if not isinstance(manifest.get("tensors"), list):
+        raise ValueError("artifact manifest must list its tensors")
+    return weights_path
 
 
 class Siglip2Pipeline:
@@ -86,6 +195,10 @@ class Siglip2Pipeline:
         self.manifest_verified = manifest_verified
         self.weight_sha256 = weight_sha256
         self.weight_size_bytes = weight_size_bytes
+        self.adapter: dict[str, Any] | None = None
+        if hasattr(self.model, "parameters"):  # injected fakes in the offline tests carry none
+            for param in self.model.parameters():
+                param.requires_grad_(False)
 
     @classmethod
     def from_pretrained(
@@ -214,6 +327,339 @@ class Siglip2Pipeline:
         order = np.argsort(-scores, kind="stable")[: min(top_k, len(images))]
         return [RetrievalHit(index=int(index), score=float(scores[index])) for index in order]
 
+    def evaluate(
+        self,
+        records: Sequence[Mapping[str, Any]],
+        *,
+        classes: Sequence[str] | None = None,
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
+        class_names_map: Mapping[str, str] | None = None,
+        batch_size: int = 16,
+    ) -> dict[str, Any]:
+        """Zero-shot classification of a validated labelled dataset: one prompt per class (the label, or its
+        entry in `class_names_map`, in `prompt_template`), the sigmoid-scaled logits as the score grid, and
+        accuracy / macro F1 / per-class breakdown / text-to-image mAP from `metrics.classification_metrics`."""
+        from .metrics import classification_metrics
+        from .samples import class_names, validate_dataset
+
+        checked = validate_dataset(records, min_records=1, max_records=MAX_EVAL_RECORDS)["records"]
+        class_list = list(classes) if classes is not None else class_names(checked)
+        unknown = sorted({r["label"] for r in checked} - set(class_list))
+        if unknown:
+            raise ValueError(f"records carry labels outside classes: {unknown[:5]}")
+        started = time.perf_counter()
+        text = self.embed_text(_prompts(class_list, prompt_template, class_names_map))
+        rows = []
+        for start in range(0, len(checked), batch_size):
+            rows.append(self.embed_image([r["image"] for r in checked[start : start + batch_size]]))
+        images = np.concatenate(rows)
+        scale = float(self.model.logit_scale.detach().exp().cpu())
+        bias = float(self.model.logit_bias.detach().cpu())
+        scores = images @ text.T * scale + bias  # the model's own logits_per_image
+        gold = [class_list.index(r["label"]) for r in checked]
+        metrics = classification_metrics(scores, gold, class_list)
+        metrics.update(
+            {
+                "classes": class_list,
+                "predictions": [class_list[int(i)] for i in scores.argmax(axis=1)],
+                "prompt_template": prompt_template,
+                "score": "logits_per_image (sigmoid-scaled cosine)",
+                "verdict": "measured"
+                if len(checked) >= MIN_SCORED_RECORDS
+                else "measured-small-sample",
+                "adapted": self.adapter is not None,
+                "seconds": round(time.perf_counter() - started, 3),
+                "model_id": MODEL_ID,
+                "model_revision": MODEL_REVISION,
+            }
+        )
+        return metrics
+
+    def adapt(
+        self,
+        train: Sequence[Mapping[str, Any]],
+        val: Sequence[Mapping[str, Any]] | None = None,
+        *,
+        epochs: int = 6,
+        lr: float = 5e-5,
+        batch_size: int = 16,
+        trainable_vision_layers: int = DEFAULT_TRAINABLE_VISION_LAYERS,
+        prompt_template: str = DEFAULT_PROMPT_TEMPLATE,
+        class_names_map: Mapping[str, str] | None = None,
+        seed: int = 0,
+        progress: Callable[[dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
+        """Bounded supervised fine-tuning of the vision tower on a validated labelled dataset.
+
+            Only the last `trainable_vision_layers` blocks of the vision tower, its post-layernorm and its
+            attention-pool head train (2 blocks by default: 21,264,384 of 375,187,970 parameters; the text tower,
+            the embeddings, `logit_scale` and `logit_bias` stay frozen). The class prompts are embedded once by the
+            frozen text tower; every batch of photographs is scored against them with the model's own
+            sigmoid-scaled logits and trained with SigLIP's pairwise sigmoid loss (+1 for the gold class, -1 for
+            every other class). AdamW at a fixed learning rate with gradient clipping at 1.0, seeded shuffling, no
+            scheduler. Epoch 0 records the frozen model's validation metrics; the epoch with the highest
+            validation text-to-image mAP is kept (smoother than accuracy on a small validation split).
+        Transactional: any failure restores the base tensors."""
+        import torch
+        from torch.nn.functional import logsigmoid, normalize
+
+        from .samples import class_names, validate_dataset
+
+        if isinstance(epochs, bool) or not isinstance(epochs, int) or not 1 <= epochs <= 20:
+            raise ValueError("epochs must be an int in 1..20")
+        if not (0.0 < lr <= 1e-3):
+            raise ValueError("lr must be in (0, 1e-3]")
+        if (
+            isinstance(batch_size, bool)
+            or not isinstance(batch_size, int)
+            or not 1 <= batch_size <= 64
+        ):
+            raise ValueError("batch_size must be an int in 1..64")
+        names = _trainable_names(self.model, trainable_vision_layers)
+        train_checked = validate_dataset(train)["records"]
+        class_list = class_names(train_checked)
+        val_checked = (
+            validate_dataset(val, min_records=1, max_records=MAX_EVAL_RECORDS)["records"]
+            if val
+            else []
+        )
+        unknown = sorted({r["label"] for r in val_checked} - set(class_list))
+        if unknown:
+            raise ValueError(
+                f"validation records carry labels outside the training classes: {unknown[:5]}"
+            )
+        model, processor = self.model, self.processor
+        torch.manual_seed(seed)
+        started = time.perf_counter()
+        wanted = set(names)
+        for name, param in model.named_parameters():
+            param.requires_grad_(name in wanted)
+        params = [p for p in model.parameters() if p.requires_grad]
+        n_trainable = sum(p.numel() for p in params)
+        optimiser = torch.optim.AdamW(params, lr=lr, weight_decay=0.01)
+        prompts = _siglip2_texts(_prompts(class_list, prompt_template, class_names_map))
+        with (
+            torch.no_grad()
+        ):  # not inference_mode: the cached prompt features feed the training graph
+            tokens = processor(
+                text=prompts, padding="max_length", max_length=TEXT_MAX_LENGTH, return_tensors="pt"
+            )
+            tokens = _move_batch(tokens, self.device)
+            text_feat = normalize(model.get_text_features(**tokens), dim=-1).clone()
+        scale, bias = model.logit_scale.detach().exp(), model.logit_bias.detach()
+        gold = torch.tensor(
+            [class_list.index(r["label"]) for r in train_checked], device=self.device
+        )
+
+        def score_val() -> dict[str, Any] | None:
+            if not val_checked:
+                return None
+            model.eval()
+            result = self.evaluate(
+                val_checked,
+                classes=class_list,
+                prompt_template=prompt_template,
+                class_names_map=class_names_map,
+            )
+            return {k: result[k] for k in ("accuracy", "macro_f1", "t2i_map", "n")}
+
+        history: list[dict[str, Any]] = []
+        entry: dict[str, Any] = {
+            "epoch": 0,
+            "train_loss": None,
+            "val": score_val(),
+            "note": "frozen model",
+        }
+        history.append(entry)
+        if progress:
+            progress(entry)
+        best_score = entry["val"]["accuracy"] if entry["val"] else -math.inf
+        best_state = {k: v.detach().clone() for k, v in model.state_dict().items() if k in wanted}
+        initial_state = {k: v.clone() for k, v in best_state.items()}
+        best_epoch = 0
+        generator = torch.Generator().manual_seed(seed)
+        try:
+            for epoch in range(1, epochs + 1):
+                model.train()
+                order = torch.randperm(len(train_checked), generator=generator).tolist()
+                losses = []
+                for start in range(0, len(order), batch_size):
+                    index = order[start : start + batch_size]
+                    pixels = processor(
+                        images=[train_checked[i]["image"] for i in index], return_tensors="pt"
+                    )
+                    pixels = _move_batch(pixels, self.device)
+                    image_feat = normalize(model.get_image_features(**pixels), dim=-1)
+                    logits = image_feat @ text_feat.T * scale + bias
+                    target = torch.full_like(logits, -1.0)
+                    target[torch.arange(len(index), device=self.device), gold[index]] = 1.0
+                    loss = -logsigmoid(target * logits).sum(dim=1).mean()
+                    optimiser.zero_grad(set_to_none=True)
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(params, 1.0)
+                    optimiser.step()
+                    losses.append(float(loss.detach()))
+                model.eval()
+                entry = {
+                    "epoch": epoch,
+                    "train_loss": sum(losses) / len(losses),
+                    "val": score_val(),
+                }
+                history.append(entry)
+                if progress:
+                    progress(entry)
+                current = entry["val"]["accuracy"] if entry["val"] else math.inf
+                if current > best_score or not entry["val"]:
+                    best_score = current
+                    best_state = {
+                        k: v.detach().clone() for k, v in model.state_dict().items() if k in wanted
+                    }
+                    best_epoch = epoch
+        except BaseException:
+            restore = dict(model.state_dict())
+            restore.update(initial_state)
+            model.load_state_dict(restore, strict=True)
+            model.eval()
+            for param in model.parameters():
+                param.requires_grad_(False)
+            self.adapter = None
+            raise
+        merged = dict(model.state_dict())
+        merged.update(best_state)
+        model.load_state_dict(merged, strict=True)
+        model.eval()
+        for param in model.parameters():
+            param.requires_grad_(False)
+        self.adapter = {
+            "trainable_vision_layers": trainable_vision_layers,
+            "trainable_names": names,
+            "n_trainable": n_trainable,
+            "n_total": sum(p.numel() for p in model.parameters()),
+            "classes": class_list,
+            "prompt_template": prompt_template,
+            "epochs": epochs,
+            "best_epoch": best_epoch,
+            "selection": "highest validation text-to-image mAP"
+            if val_checked
+            else "final epoch (no validation split)",
+            "lr": lr,
+            "batch_size": batch_size,
+            "n_train": len(train_checked),
+            "n_val": len(val_checked),
+            "seed": seed,
+            "history": history,
+            "seconds": round(time.perf_counter() - started, 2),
+        }
+        return dict(self.adapter)
+
+    def save_artifact(
+        self, output_dir: str | Path, metadata: Mapping[str, Any] | None = None
+    ) -> Path:
+        """Write the adapted vision-tower tensors as safetensors plus a base manifest."""
+        if self.adapter is None:
+            raise ValueError("nothing to save: call adapt() first")
+        from safetensors.torch import save_file
+
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        names = set(self.adapter["trainable_names"])
+        tensors = {
+            k: v.detach().cpu().contiguous()
+            for k, v in self.model.state_dict().items()
+            if k in names
+        }
+        weights_path = out / ARTIFACT_WEIGHTS_NAME
+        save_file(tensors, str(weights_path), metadata={"format": "pt"})
+        manifest = {
+            "format": ARTIFACT_FORMAT,
+            "format_version": ARTIFACT_FORMAT_VERSION,
+            "base_model": {
+                "id": MODEL_ID,
+                "revision": MODEL_REVISION,
+                "key": DEFAULT_MODEL_KEY,
+                "weight_file": MODEL_FILENAME,
+                "weight_sha256": MODEL_SHA256,
+            },
+            "adapter": {
+                k: v for k, v in self.adapter.items() if k not in ("history", "trainable_names")
+            },
+            "history": self.adapter["history"],
+            "tensors": sorted(tensors),
+            "files": [
+                {
+                    "path": ARTIFACT_WEIGHTS_NAME,
+                    "bytes": weights_path.stat().st_size,
+                    "sha256": _sha256_file(weights_path),
+                }
+            ],
+            "metadata": dict(metadata or {}),
+        }
+        (out / ARTIFACT_MANIFEST_NAME).write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        return out
+
+    def load_artifact(self, artifact_dir: str | Path) -> dict[str, Any]:
+        """Verify an adapter's manifest, digest and exact tensor set **before** deserialising, then overwrite
+        exactly the tensors it carries."""
+        root = Path(artifact_dir)
+        manifest = json.loads((root / ARTIFACT_MANIFEST_NAME).read_text(encoding="utf-8"))
+        weights_path = _check_artifact_manifest(root, manifest)
+        entry = manifest["files"][0]
+        if not weights_path.is_file():
+            raise FileNotFoundError(f"artifact weights missing: {weights_path}")
+        if (
+            _sha256_file(weights_path) != entry["sha256"]
+            or weights_path.stat().st_size != entry["bytes"]
+        ):
+            raise ValueError(f"{entry['path']}: digest or size mismatch; refusing to load")
+        expected = sorted(
+            _trainable_names(self.model, manifest["adapter"]["trainable_vision_layers"])
+        )
+        if sorted(manifest["tensors"]) != expected:
+            raise ValueError("artifact tensor list does not match its recorded configuration")
+        from safetensors.torch import load_file
+
+        tensors = load_file(str(weights_path))
+        if sorted(tensors) != expected:
+            raise ValueError("artifact tensor names differ from its manifest")
+        state = self.model.state_dict()
+        for key, value in tensors.items():
+            if key not in state or not key.startswith("vision_model."):
+                raise ValueError(
+                    f"artifact tensor {key} is not an adaptable vision-tower tensor of the base"
+                )
+            if tuple(value.shape) != tuple(state[key].shape):
+                raise ValueError(
+                    f"artifact tensor {key} has shape {tuple(value.shape)}, base has {tuple(state[key].shape)}"
+                )
+        merged = dict(state)
+        merged.update({k: v.to(state[k].dtype) for k, v in tensors.items()})
+        self.model.load_state_dict(merged, strict=True)
+        self.model.eval()
+        self.adapter = {
+            **manifest["adapter"],
+            "trainable_names": manifest["tensors"],
+            "history": manifest.get("history", []),
+        }
+        return manifest
+
+    @classmethod
+    def from_artifact(
+        cls,
+        artifact_dir: str | Path,
+        *,
+        device: str | torch.device | None = None,
+        weights_dir: str | Path | None = None,
+        allow_download: bool = False,
+    ) -> Siglip2Pipeline:
+        """A fresh pipeline from the pinned base with an adapter overlaid."""
+        pipe = cls.from_pretrained(
+            device=device, weights_dir=weights_dir, allow_download=allow_download
+        )
+        pipe.load_artifact(artifact_dir)
+        return pipe
+
 
 def load_pipeline(
     *,
@@ -226,6 +672,7 @@ def load_pipeline(
         cache_dir=cache_dir,
         weights_path=weights_path,
     )
+
 
 # --------------------------------------------------------------------------
 # Role stages (DIMER NOTEBOOK_SPEC 1.1 DAT24 / EVAL21)

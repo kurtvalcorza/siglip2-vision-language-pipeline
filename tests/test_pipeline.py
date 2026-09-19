@@ -146,4 +146,3 @@ def test_retrieval_tie_breaking_is_deterministic_and_stable():
     hits = pipe.retrieve("query", images, top_k=4)
     assert [hit.index for hit in hits] == [0, 1, 2, 3]
     assert all(hit.score == pytest.approx(1.0) for hit in hits)
-

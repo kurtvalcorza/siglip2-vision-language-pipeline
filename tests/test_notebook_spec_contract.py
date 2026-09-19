@@ -25,10 +25,7 @@ def _load_notebook() -> dict:
 
 
 def _source_text(notebook: dict) -> str:
-    return "\n".join(
-        "".join(cell.get("source", []))
-        for cell in notebook["cells"]
-    )
+    return "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
 
 
 def _normalized_source(notebook: dict) -> str:

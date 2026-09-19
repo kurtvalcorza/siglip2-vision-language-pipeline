@@ -28,7 +28,14 @@ from siglip2_pipeline import model as model_mod
 
 ROOT = Path(__file__).resolve().parents[1]
 OTHER_SHA = "0" * 40
-SMALL = ("config.json", "preprocessor_config.json", "special_tokens_map.json", "tokenizer.json", "tokenizer.model", "tokenizer_config.json")
+SMALL = (
+    "config.json",
+    "preprocessor_config.json",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer.model",
+    "tokenizer_config.json",
+)
 
 
 def _sha(payload: bytes) -> str:
@@ -71,8 +78,14 @@ def pinned_to_stand_in(monkeypatch, tmp_path):
 
 def test_default_weights_dir_and_committed_manifest_match_the_pins():
     assert model_mod.DEFAULT_WEIGHTS_DIR == ROOT / "weights" / DEFAULT_MODEL_KEY
-    manifest = json.loads((ROOT / "weights" / DEFAULT_MODEL_KEY / MANIFEST_NAME).read_text(encoding="utf-8"))
-    assert (manifest["modelId"], manifest["revision"], manifest["modelKey"]) == (MODEL_ID, MODEL_REVISION, DEFAULT_MODEL_KEY)
+    manifest = json.loads(
+        (ROOT / "weights" / DEFAULT_MODEL_KEY / MANIFEST_NAME).read_text(encoding="utf-8")
+    )
+    assert (manifest["modelId"], manifest["revision"], manifest["modelKey"]) == (
+        MODEL_ID,
+        MODEL_REVISION,
+        DEFAULT_MODEL_KEY,
+    )
     by_path = {e["path"]: e for e in manifest["files"]}
     assert by_path["model.safetensors"]["sha256"] == MODEL_SHA256
     assert by_path["model.safetensors"]["bytes"] == MODEL_SIZE_BYTES
@@ -88,7 +101,9 @@ def test_stage_fetches_only_the_absent_entries_through_the_injected_downloader(t
 
     def downloader(relative_path: str, root: Path) -> None:
         calls.append((relative_path, root))
-        (root / relative_path).write_bytes(b"safetensors-stand-in" if relative_path.endswith(".safetensors") else b"{}")
+        (root / relative_path).write_bytes(
+            b"safetensors-stand-in" if relative_path.endswith(".safetensors") else b"{}"
+        )
 
     fetched = stage_missing_files(tmp_path, allow_download=True, downloader=downloader)
     assert sorted(fetched) == ["model.safetensors", "tokenizer.json"]
@@ -121,13 +136,22 @@ def test_the_default_downloader_fetches_at_the_pinned_revision(monkeypatch, tmp_
     calls: list[dict] = []
 
     def fake_hf_hub_download(repo_id, filename, *, revision, local_dir):
-        calls.append({"repo_id": repo_id, "filename": filename, "revision": revision, "local_dir": local_dir})
+        calls.append(
+            {"repo_id": repo_id, "filename": filename, "revision": revision, "local_dir": local_dir}
+        )
 
     import huggingface_hub
 
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_hf_hub_download)
     model_mod._hub_download("model.safetensors", tmp_path)
-    assert calls == [{"repo_id": MODEL_ID, "filename": "model.safetensors", "revision": MODEL_REVISION, "local_dir": str(tmp_path)}]
+    assert calls == [
+        {
+            "repo_id": MODEL_ID,
+            "filename": "model.safetensors",
+            "revision": MODEL_REVISION,
+            "local_dir": str(tmp_path),
+        }
+    ]
 
 
 def test_verify_snapshot_returns_the_manifest_and_calls_the_existing_verifier(pinned_to_stand_in):
@@ -166,17 +190,33 @@ def test_verify_snapshot_refuses_a_missing_manifest_entry(pinned_to_stand_in):
         verify_snapshot(pinned_to_stand_in)
 
 
-def test_from_pretrained_weights_dir_stages_verifies_and_loads_the_explicit_path(monkeypatch, pinned_to_stand_in):
+def test_from_pretrained_weights_dir_stages_verifies_and_loads_the_explicit_path(
+    monkeypatch, pinned_to_stand_in
+):
     seen: dict = {}
 
     def fake_load_components(*, device, cache_dir, weights_path, return_metadata):
         seen["weights_path"] = weights_path
-        return "model", "processor", "cpu", Path(weights_path), {"checkpoint_path": Path(weights_path), "checkpoint_source": "explicit_path", "manifest_verified": True, "weight_sha256": "x", "weight_size_bytes": 1}
+        return (
+            "model",
+            "processor",
+            "cpu",
+            Path(weights_path),
+            {
+                "checkpoint_path": Path(weights_path),
+                "checkpoint_source": "explicit_path",
+                "manifest_verified": True,
+                "weight_sha256": "x",
+                "weight_size_bytes": 1,
+            },
+        )
 
     import siglip2_pipeline.pipeline as pipeline_mod
 
     monkeypatch.setattr(pipeline_mod, "load_components", fake_load_components)
-    monkeypatch.setattr(model_mod, "snapshot_download", lambda **_: (_ for _ in ()).throw(AssertionError("no hub")))
+    monkeypatch.setattr(
+        model_mod, "snapshot_download", lambda **_: (_ for _ in ()).throw(AssertionError("no hub"))
+    )
     pipe = Siglip2Pipeline.from_pretrained(device="cpu", weights_dir=pinned_to_stand_in)
     assert seen["weights_path"] == pinned_to_stand_in
     assert pipe.checkpoint_source == "explicit_path" and pipe.manifest_verified is True
@@ -184,4 +224,6 @@ def test_from_pretrained_weights_dir_stages_verifies_and_loads_the_explicit_path
     with pytest.raises(FileNotFoundError, match="allow_download=True"):
         Siglip2Pipeline.from_pretrained(device="cpu", weights_dir=pinned_to_stand_in)
     with pytest.raises(ValueError, match="not both"):
-        Siglip2Pipeline.from_pretrained(weights_dir=pinned_to_stand_in, weights_path=pinned_to_stand_in)
+        Siglip2Pipeline.from_pretrained(
+            weights_dir=pinned_to_stand_in, weights_path=pinned_to_stand_in
+        )
