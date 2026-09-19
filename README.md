@@ -15,7 +15,7 @@ The wrapper code in this repository is MIT licensed. The model weights retain Go
 
 ## Status
 
-**Release candidate.** The inference contract, the adaptation contract and the real pinned checkpoint have been exercised locally (CPU and an RTX 5070 Ti) and on CPU CI. The tutorial source conforms to the DIMER Notebook Specification 2.0 `E2E` profile as a standalone carrier; a notebook revision becomes release evidence only after a clean-runtime execution of that exact blob is recorded in `docs/release-verification.md`. Production HTTP serving / DIMER worker packaging remains a separate serving-readiness milestone.
+**Release-grade.** The inference contract, the adaptation contract and the real pinned checkpoint have been exercised locally (CPU and an RTX 5070 Ti), on CPU CI, and — for the `E2E` standalone tutorial at blob `15f946ab` — in a clean Kaggle Tesla T4 runtime on 2026-09-20 (recorded in `docs/release-verification.md`). A later notebook revision returns to Candidate until a clean-runtime execution of that exact blob is recorded. Production HTTP serving / DIMER worker packaging remains a separate serving-readiness milestone.
 
 ## Capabilities
 
@@ -87,7 +87,7 @@ The default path runs on CPU and uses CUDA automatically when present (about thr
 
 ## Release status
 
-**Candidate.** Static/unit checks do not constitute clean-runtime notebook evidence. The clean-runtime run of the `E2E` standalone tutorial is pending; complete `docs/release-verification.md` against the exact release revision before calling the notebook release-grade. See `STATUS.md`.
+**Release-grade** — the `E2E` notebook blob `15f946ab` (committed at `f3dd43e`) executed top-to-bottom in a clean Kaggle Tesla T4 runtime on 2026-09-20 (14/14 ok (1 restart after install cell), 423.7 s); the record is in `docs/release-verification.md` and `STATUS.md`. Static and unit checks — including the standalone generator parity checks — are necessary but were never the evidence; the hosted run is. A later change to the carried modules or the notebook returns the status to Candidate until re-verified.
 
 ## Score semantics
 
