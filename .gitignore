@@ -22,3 +22,6 @@ weights/**/*.onnx
 weights/*.onnx
 weights/**/*.gguf
 weights/*.gguf
+
+# iNaturalist photographs are fetched at run time and digest-verified; never committed
+weights/inat-birds/

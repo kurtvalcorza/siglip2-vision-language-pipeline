@@ -140,4 +140,3 @@ def test_resolve_weights_path_precedence(
     resolved, source = model_module.resolve_weights_path()
     assert resolved == tmp_path / "hub_cache"
     assert source == "hf_hub"
-

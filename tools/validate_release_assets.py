@@ -1,4 +1,4 @@
-"""Static release-asset validation for the SigLIP 2 vision-language (MULTI-CAPABILITY) DIMER pipeline.
+"""Static release-asset validation for the SigLIP 2 vision-language (E2E) DIMER pipeline.
 
 Checks the STANDALONE tutorial notebook (DIMER Notebook Specification 2.0 §4), the tutorial
 registry, model card, README, STATUS.md and weight documentation for source conformance and
@@ -23,72 +23,96 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "siglip2_pipeline"
 REPO_NAME = "siglip2-vision-language-pipeline"
 NOTEBOOK_NAME = "siglip2_vision_language_colab.ipynb"
-EXPECTED_PROFILE = "MULTI-CAPABILITY"
+EXPECTED_PROFILE = "E2E"
 EXPECTED_MODEL_ID = "google/siglip2-base-patch16-224"
 PIPELINE_CLASS = "Siglip2Pipeline"
-# INF1: the exact load expression the model cell must use. The release lock is the CPU-only
-# reference graph, so the template's `model_load` pins device="cpu".
-MODEL_LOAD_EXPR = f"{PIPELINE_CLASS}.from_pretrained(device=\"cpu\", weights_dir=WEIGHTS_DIR)"
+# INF1: the exact load expression the model cell must use. The pipeline picks CUDA when it is
+# visible (the fine-tuning stage is where that matters); CPU is the documented fallback.
+MODEL_LOAD_EXPR = f"{PIPELINE_CLASS}.from_pretrained(weights_dir=WEIGHTS_DIR)"
 # Additional 40-hex revisions a document may legitimately cite (none by default).
 KNOWN_SHAS: frozenset[str] = frozenset(())
 # Colab form gates that must default to the non-interactive sample path.
 BYOD_GATES = ("USE_BYOD",)
-# Machine-readable artifacts the notebook must write (OUT1-OUT3, DAT24, EVAL21).
+# Machine-readable artifacts the notebook must write (OUT1-OUT3, OUT8, DAT24, EVAL21).
 EXPECTED_OUTPUTS = (
+    "outputs/siglip2_vision_language_train.csv",
     "outputs/siglip2_vision_language_input_manifest.json",
     "outputs/siglip2_vision_language_evaluation_report.json",
+    "outputs/siglip2_vision_language_shapes.json",
+    "outputs/siglip2_vision_language_adapter",
     "outputs/siglip2_vision_language_result.json",
-    "outputs/similarity.csv",
-    "outputs/classification.json",
-    "outputs/retrieval.json",
-    "outputs/image_embeddings.npz",
-    "outputs/text_embeddings.npz",
-    "outputs/new_data_classification.json",
-    "outputs/metrics.json",
     "outputs/provenance.json",
 )
 # Profile-specific code the notebook must exercise through the carried package's public API.
 CODE_MARKERS = (
-    "input_manifest = validate_inputs(validation_images, candidate_labels, top_k=len(images), names=validation_names)",
-    "validate_inputs(\"https://example.invalid/not-allowed.png\", candidate_labels)",
-    "scores = pipe.zero_shot_classify(image_path, candidate_labels)",
-    "image_embeddings = pipe.embed_image(images)",
-    "text_embeddings = pipe.embed_text(expected_labels)",
-    "similarity = pipe.similarity(images, expected_labels)",
-    "hits = pipe.retrieve(query, images, top_k=len(images))",
-    "report = evaluation_report(result, targets, sample_kind=sample_kind)",
-    "targets = {\"labels\": expected_labels, \"retrieval_indices\": list(range(len(images)))}",
-    "new_data_scores = pipe.zero_shot_classify(new_image_path, new_labels)",
-    "print({'ceilings': {'TEXT_MAX_LENGTH': TEXT_MAX_LENGTH, 'DEFAULT_PROMPT_TEMPLATE': DEFAULT_PROMPT_TEMPLATE",
+    "corpus_files = fetch_corpus(cache_dir='weights/inat-birds')",
+    "corpus = read_corpus(corpus_files)",
+    "splits = build_sample_dataset(corpus, seed=SPLIT_SEED)",
+    "records = load_byod_dataset(byod_zip)",
+    "splits = split_dataset(records, seed=SPLIT_SEED)",
+    "dataset_manifests = {name: validate_dataset(part) for name, part in splits.items()}",
+    "disjoint = check_split_disjoint(splits)",
+    "'observer_overlap': observer_overlap(splits)",
+    "classes = class_names(train_records)",
+    "write_dataset_csv(train_records, 'outputs/siglip2_vision_language_train.csv')",
+    "'image over the side ceiling': [{**train_records[0], 'image': Image.new('RGB', (MAX_IMAGE_SIDE + 1, 8))}, *train_records[1:8]]",
+    "validate_dataset(probe)",
+    "print({'ceilings': {'TEXT_MAX_LENGTH': TEXT_MAX_LENGTH, 'DEFAULT_PROMPT_TEMPLATE': DEFAULT_PROMPT_TEMPLATE, 'MAX_IMAGE_SIDE': MAX_IMAGE_SIDE, 'MIN_RECORDS': MIN_RECORDS, 'MAX_RECORDS': MAX_RECORDS, 'MIN_CLASSES': MIN_CLASSES",
     "SAMPLE_DIGESTS = {",
-    "raise ValueError(f\"Synthetic sample digest mismatch for {name}",
-    "BYOD file is not a decodable image",
-    "colab_files.upload()",
-    "image_ids=np.asarray",
-    "text_ids=np.asarray",
-    "write_provenance(\"outputs/provenance.json\", pipeline=pipe)",
+    "raise ValueError(f'Synthetic sample digest mismatch for {name}",
+    "input_manifest = validate_inputs(shape_images, candidate_labels, top_k=len(shape_images), names=[p.name for p in shape_images])",
+    "validate_inputs('https://example.invalid/not-allowed.png', candidate_labels)",
+    "scores = pipe.zero_shot_classify(image_path, candidate_labels)",
+    "retrievals.append(pipe.retrieve(query, shape_images, top_k=len(shape_images)))",
+    "shape_embeddings = pipe.embed_image(shape_images)",
+    "targets = {'labels': shape_labels, 'retrieval_indices': list(range(len(shape_images)))}",
+    "frozen_scene = evaluation_report(result, targets, sample_kind='synthetic')",
+    "baseline_majority = majority_baseline(train_records, test_records, classes)",
+    "baseline_neighbour = colour_neighbour_baseline(train_records, test_records, classes)",
+    "frozen_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)",
+    "frozen_scientific = pipe.evaluate(test_records, classes=classes, class_names_map=scientific_names, prompt_template='This is a photo of {label}.')",
+    "assert frozen_test['t2i_map'] > baseline_majority['t2i_map'] and frozen_test['accuracy'] > baseline_neighbour['accuracy']",
+    "adapt_result = pipe.adapt(train_records, val_records, epochs=EPOCHS, lr=LEARNING_RATE, batch_size=BATCH_SIZE, trainable_vision_layers=TRAINABLE_VISION_LAYERS, class_names_map=display_names, progress=report)",
+    "adapted_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)",
+    "adapted_val = pipe.evaluate(val_records, classes=classes, class_names_map=display_names)",
+    "assert adapted_test['t2i_map'] > frozen_test['t2i_map']",
+    "adapted_scene = evaluation_report({'classifications': adapted_classifications, 'retrievals': adapted_retrievals, 'gallery_ids': [p.name for p in shape_images]}, targets, sample_kind='synthetic')",
+    "pipe.save_artifact(artifact_dir, metadata={'tutorial': 'siglip2_vision_language', 'data_source': data_source})",
+    "reloaded = Siglip2Pipeline.from_artifact(artifact_dir, weights_dir=WEIGHTS_DIR, device=pipe.device)",
+    "assert parity['identical_rows'] == parity['of']",
+    "write_provenance('outputs/provenance.json', pipeline=pipe)",
     "'model_revision': MODEL_REVISION",
     "'model_license': MODEL_LICENSE",
+    "'weight_file': MODEL_FILENAME, 'weight_format': 'safetensors, digest-verified', 'weight_sha256': MODEL_SHA256",
+    "'corpus': {'name': CORPUS_NAME, 'release': CORPUS_RELEASE, 'license': CORPUS_LICENSE, 'base_url': CORPUS_BASE_URL, 'bytes': CORPUS_BYTES, 'pinned_photographs': len(SAMPLE_RECORDS)",
     "transformers.__version__",
     "'device': str(pipe.device)",
 )
 # Profile-specific learner-facing statements.
 MARKDOWN_MARKERS = (
-    "**Capability:** zero-shot image classification, image/text embeddings, cosine similarity, and text-to-image retrieval",
-    "**No gradient training, fine-tuning, in-context conditioning, or fitted preprocessing state occurs**",
-    "**no adaptation occurs.**",
+    "**Capability:** zero-shot image classification, image/text embeddings, cosine similarity, text-to-image retrieval and bounded supervised fine-tuning of the vision tower's last blocks",
+    "**Apache-2.0** licence",
     "**not calibrated probabilities**",
     "**prompt/label dependent**",
-    "**downstream application**",
-    "**synthetic tutorial/smoke assets**",
-    "**L2-normalized**",
-    "**no intrinsic accuracy metric**",
+    "**adaptation with labelled photographs**",
+    "**CC0 1.0**",
+    "**text-to-image mAP**",
+    "**non-neural baselines**",
+    "**majority floor**",
+    "**colour nearest neighbour**",
     "**ordered by descending score**",
-    "the verdict is `not-measurable`",
     "`sample-sanity`",
-    "**CPU-only**",
+    "**no dispersion estimate**",
+    "**Snapshot note:**",
     "object detection, semantic segmentation, OCR, caption generation",
-    "## 10. Default new-data inference",
+    "## 4. iNaturalist photographs and split",
+    "## 5. Classify through the inference contract",
+    "## 6. Baselines and the frozen model's zero-shot score on the test photographs",
+    "## 7. Bounded fine-tuning of the vision tower's last blocks",
+    "## 8. Held-out evaluation",
+    "## 9. Re-score the drawn shapes, export the adapter and reload it",
+    "**Leakage:**",
+    "**Prompts:**",
 )
 # Direct-library use that must stay inside the carried module cells (G2: the notebook calls the
 # pipeline API, it does not reimplement it). Checked on every code cell except the embedded ones
@@ -105,9 +129,18 @@ FORBIDDEN_OUTSIDE_MODULE = (
     "torch.sigmoid(",
     "get_image_features(",
     "get_text_features(",
+    "torch.optim",
+    ".backward(",
+    "requires_grad",
+    "logit_scale",
+    "from safetensors",
+    "import safetensors",
+    "urllib.request",
+    "pipe.model.",
     "worker.run(",
     "worker_cli(",
     "subprocess.run([",
+    "extractall(",
 )
 INSTALL_CELL_MARKER = "subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', *PINS], check=True)"
 

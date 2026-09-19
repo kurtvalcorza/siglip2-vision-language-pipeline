@@ -135,9 +135,9 @@ def test_committed_base_model_snapshot_manifest_matches_weights():
             for err in errors
             if "model.safetensors" not in err and "Total bytes mismatch" not in err
         ]
-        assert (
-            non_weight_errors == []
-        ), f"Unexpected config/tokenizer errors in manifest: {non_weight_errors}"
+        assert non_weight_errors == [], (
+            f"Unexpected config/tokenizer errors in manifest: {non_weight_errors}"
+        )
     else:
         assert ok is True, f"Snapshot verification failed: {errors}"
 
@@ -212,4 +212,3 @@ def test_fetch_model_fails_when_download_mismatches_expected_manifest(
     # fetch_model without write_manifest must NOT overwrite manifest and must fail verification
     success = fetch_model(tmp_path, write_manifest=False)
     assert success is False
-
