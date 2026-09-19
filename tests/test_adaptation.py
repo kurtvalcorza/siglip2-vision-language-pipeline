@@ -13,7 +13,6 @@ import zipfile
 import numpy as np
 import pytest
 from PIL import Image, ImageDraw
-from tests.test_pipeline import FakeModel, FakeProcessor
 
 from siglip2_pipeline import (
     ARTIFACT_FORMAT,
@@ -45,6 +44,7 @@ from siglip2_pipeline import (
 )
 from siglip2_pipeline import pipeline as pl
 from siglip2_pipeline import samples as sm
+from test_pipeline import FakeModel, FakeProcessor
 
 COLOURS = ["red", "green", "blue", "yellow", "white", "black"]
 
