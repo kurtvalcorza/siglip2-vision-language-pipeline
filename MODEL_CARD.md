@@ -57,7 +57,7 @@ The primary intended uses of this pipeline comprise five technical vision-langua
 5. In-memory semantic image retrieval (`Siglip2Pipeline.retrieve`): Finding top-k matching images from a local candidate corpus for a given text query.
 6. Labelled-set evaluation (`Siglip2Pipeline.evaluate`): Scoring `{id, image, label}` records with one prompt per class and reporting accuracy, macro F1, per-class recall / precision / F1 / average precision and text-to-image mAP beside the predictions.
 7. Bounded supervised fine-tuning (`Siglip2Pipeline.adapt`, `save_artifact`, `from_artifact`): Adapting the vision tower's last blocks and head to a small labelled photograph set with validation-based epoch selection, exporting the adapter, and reloading it with verified parity.
-Target application domains include disaster triage image filtering, digital asset cataloging, content moderation triage, wildlife photo categorization, and semantic image retrieval within the DIMER platform.
+Target application domains include disaster triage image filtering, digital asset cataloging, content moderation triage, wildlife photo categorization, and semantic image retrieval.
 
 ###### Primary Intended Users
 
