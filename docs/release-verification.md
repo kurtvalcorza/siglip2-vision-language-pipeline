@@ -166,3 +166,16 @@ why the epoch is selected on mAP; on an earlier 48-photograph test split the sam
 from +2 to +12 points across epochs, which is what "no dispersion estimate" means here; the scientific-name prompt set
 is scored so a reviewer can see how much of the number is the prompt's; and the drawn shapes re-scored after
 adaptation are three images of evidence about behaviour outside the corpus, not a measurement.
+
+
+## Shared retrieval supplemental remediation evidence — 2026-09-26
+
+Applies only to `DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb`, identical executable cells in both repository entry points. Candidate remains; no real-model or hosted execution was performed here. Baseline BLIP:6 workshop+5 primary parity tests and validator passed. Baseline SigLIP2:5 primary parity tests passed; validator rejected the extra named supplemental notebook. The SigLIP2 validator now explicitly checks the named supplemental profile, standalone/candidate metadata, source syntax, saved errors and carried runtime policy while preserving strict primary parity and refusing unrelated extra notebooks.
+
+Confirmed gaps repaired: BYOD was loader-only; archive extraction replaced a shared directory; caption inputs coerced arbitrary values and lacked bounds; ITM output zip truncation hid missing results; index parity covered only a subset without prior digest verification; FULL reload reported finite outputs without comparison to live adapted weights. The shared notebook now runs bounded optional retrieval/reranking/index exports and FULL train→validation→freeze→fresh-reload→test, with live-to-fresh validation embedding checks. NumPy retains a loaded2.x ABI rather than replacing observed Colab2.1.3 with2.5.3; fallback is2.1.3. Incompatible loaded packages retain an explicit restart guard.
+
+Lightweight tests execute the actual loader, evaluator, reranker, index verifier, adapter export/reload and STANDARD/FULL orchestration with tiny fixtures/model doubles. They establish control flow and failure boundaries, not GPU fit, model quality or real safetensors serialization. A fake adapter that loses learned values is rejected by the actual parity comparison. Model identities and data pins are unchanged.
+
+Pending: fresh STANDARD and FULL T4 runs with exact commit/blob, complete saved outputs, versions, restart count and wall/VRAM; valid STANDARD BYOD and FULL split BYOD through real models and adapter/index exports; invalid-caption/duplicate-image runs rejected before optional model loading. Preserve each `outputs/byod/run-*` result independently. These are open hosted/REL12 evidence gates, not presumed complete from local tests.
+
+Local remediation checks:17 focused tests passed, including STANDARD/FULL orchestration, adapter-loss rejection and deterministic cross-image batch completion for small FULL datasets. BLIP combined suite28 passed (17 focused+6 workshop+5 primary parity). Safetensors IO and model weights are doubled in focused tests; no real model execution is claimed.
