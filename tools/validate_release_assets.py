@@ -667,8 +667,28 @@ def _validate_notebook_content(
 def validate_notebooks() -> None:
     tutorials = ROOT / "tutorials"
     notebooks = sorted(tutorials.glob("*.ipynb"))
-    _check(len(notebooks) == 1, f"exactly one tutorial notebook is expected, found {len(notebooks)}")
-    path = notebooks[0]
+    supplemental_name = "DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb"
+    _check({p.name for p in notebooks} == {NOTEBOOK_NAME, supplemental_name},
+           "Expected the primary tutorial and the named shared retrieval notebook only")
+    supplemental = tutorials / supplemental_name
+    shared = json.loads(_read(supplemental))
+    meta = shared.get("metadata", {}).get("dimer", {})
+    _check(meta.get("notebook_profile") == "MULTI-CAPABILITY", "Shared retrieval profile mismatch")
+    _check(meta.get("standalone") is True, "Shared retrieval must be standalone")
+    _check(meta.get("release_status") == "candidate", "Shared retrieval qualification remains pending")
+    shared_source = ""
+    for cell in shared.get("cells", []):
+        source = "".join(cell.get("source", []))
+        shared_source += source
+        if cell.get("cell_type") == "code":
+            ast.parse(source)
+            _check(not any(o.get("output_type") == "error" for o in cell.get("outputs", [])),
+                   "Shared retrieval contains saved errors")
+    for pin in ("torch==2.14.0", "transformers==4.57.6", "numpy==2.1.3"):
+        _check(pin in shared_source, f"Shared retrieval missing runtime policy {pin}")
+    for marker in ("SIGLIP2", "SIGLIP1", "BLIP", "run_byod_retrieval", "load_verified_blip_adapter"):
+        _check(marker in shared_source, f"Shared retrieval missing {marker}")
+    path = tutorials / NOTEBOOK_NAME
     _check(path.name == NOTEBOOK_NAME, f"tutorial notebook must be named {NOTEBOOK_NAME}, found {path.name}")
     build = _load_tool("build_notebook")
     notebook = json.loads(_read(path))
