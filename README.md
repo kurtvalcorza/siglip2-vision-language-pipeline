@@ -85,6 +85,12 @@ again = Siglip2Pipeline.from_artifact("outputs/adapter", weights_dir="weights/si
 
 The default path runs on CPU and uses CUDA automatically when present (about three minutes on the build workstation's CPU after the downloads, longer on a 2-vCPU hosted runtime; about a minute and a half on an RTX 5070 Ti). The metrics it prints are one seeded split of one 360-photograph sample — evidence that the adaptation contract works, not an accuracy benchmark or production-fitness evidence. The `main` integration workflow executes the notebook's code cells on the frozen CPU reference environment as a pre-flight; see `tutorials/README.md` for the registry and `docs/release-verification.md` for the release gate.
 
+### Supplemental workshop: vision-language retrieval
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/siglip2-vision-language-pipeline/blob/main/tutorials/DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb)
+
+`tutorials/DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb` (`MULTI-CAPABILITY` / `WORKSHOP`, Tesla T4) compares SigLIP 2, SigLIP v1 and BLIP ITC as first-stage retrievers on a pinned VizWiz-Captions gallery and reranks their shortlists with BLIP ITM; an optional `FULL` tier adds bounded BLIP adaptation and an optional BYOD archive runs the same contracts on your own photographs. It is the same notebook as in `blip-itm-pipeline`, hand-maintained rather than generated, and its status is **Candidate** (see `tutorials/README.md`). The release status below applies to the `E2E` notebook only.
+
 ## Release status
 
 **Release-grade** — the `E2E` notebook blob `15f946ab` (committed at `f3dd43e`) executed top-to-bottom in a clean Kaggle Tesla T4 runtime on 2026-09-20 (14/14 ok (1 restart after install cell), 423.7 s); the record is in `docs/release-verification.md` and `STATUS.md`. Static and unit checks — including the standalone generator parity checks — are necessary but were never the evidence; the hosted run is. A later change to the carried modules or the notebook returns the status to Candidate until re-verified.

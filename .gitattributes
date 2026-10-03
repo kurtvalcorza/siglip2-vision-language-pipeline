@@ -4,3 +4,6 @@
 # Model weights cache files must retain exact upstream bytes
 weights/** -text
 examples/sample-data/** -text
+
+# Executed-notebook evidence is archived byte-for-byte and verified by SHA-256; never convert its line endings.
+docs/execution-evidence/** -text
