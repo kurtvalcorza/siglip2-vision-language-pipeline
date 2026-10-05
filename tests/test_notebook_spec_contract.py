@@ -66,7 +66,7 @@ def test_release_notebook_has_gated_byod_path() -> None:
     source = _source_text(_load_notebook())
     assert "USE_BYOD = False" in source
     assert "files.upload()" in source
-    assert "records = load_byod_dataset(byod_zip)" in source
+    assert "records = load_byod_dataset(byod_path)" in source
     assert "splits = split_dataset(records, seed=SPLIT_SEED)" in source
 
 
@@ -80,7 +80,7 @@ def test_release_notebook_exercises_the_adaptation_contract() -> None:
         "baseline_neighbour = colour_neighbour_baseline(train_records, test_records, classes)",
         "frozen_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)",
         "adapt_result = pipe.adapt(train_records, val_records, epochs=EPOCHS, lr=LEARNING_RATE,",
-        "assert adapted_test['t2i_map'] > frozen_test['t2i_map']",
+        "comparison['verdicts'] = {'frozen_vs_baselines': frozen_verdict,",
         "pipe.save_artifact(artifact_dir,",
         "reloaded = Siglip2Pipeline.from_artifact(artifact_dir, weights_dir=WEIGHTS_DIR, device=pipe.device)",  # noqa: E501
         "assert parity['identical_rows'] == parity['of']",

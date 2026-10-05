@@ -21,8 +21,8 @@ CI runs `tools/validate_release_assets.py`, which checks:
   `DEFAULT_WEIGHTS_DIR` rule, the `resolve_weights_path` checkout-convenience line, and the removal of
   package-relative imports); the inline `MANIFEST` equal to the committed 8-entry snapshot manifest and the inline
   `PINS` equal to the `pyproject.toml` runtime pins; the notebook byte-identical (on LF) to
-  `tools/build_notebook.py` output for its recorded revision; the pinned-install cell with its
-  restart-on-stale-import guard; `NOTEBOOK_SOURCE` recorded in exports;
+  `tools/build_notebook.py` output for its recorded revision; the isolated-environment bootstrap cell (generator
+  /2.2: hash-locked `uv` environment, nothing installed into the kernel, no restart); `NOTEBOOK_SOURCE` recorded in exports;
 - `MODEL_ID`/`MODEL_REVISION` bound only in the carried module cells (and repeated in the inline manifest, which the
   notebook asserts against the module before fetching), the revision a 40-hex immutable commit, and the same
   identity string in `README.md` and `MODEL_CARD.md` with no stray revisions;
@@ -82,8 +82,8 @@ Before changing the registry status from `Candidate` to `Release-grade`:
 4. verify that Section 1 reports `NOTEBOOK_SOURCE.repository_revision` equal to the revision recorded in
    `metadata.dimer.generated_from` and that the installed core package versions equal the inline `PINS`
    (= `pyproject.toml`): `torch==2.14.0`, `transformers==4.57.6`, `safetensors==0.8.0`, `numpy==2.5.3`,
-   `pillow==11.3.0`, `huggingface-hub==0.36.2` (an interpreter restart after the install is expected where the
-   runtime's preinstalled torch or numpy differ from the pins);
+   `pillow==11.3.0`, `huggingface-hub==0.36.2` (installed into the isolated hash-locked environment of Section 1, so the
+   runtime's preinstalled torch or numpy do not matter and no restart is needed);
 5. verify every default-path stage completes:
    - pinned runtime installed from the inline `PINS` with no GitHub access;
    - the six carried module cells execute (defining `Siglip2Pipeline`, `verify_snapshot`, `stage_missing_files`,
