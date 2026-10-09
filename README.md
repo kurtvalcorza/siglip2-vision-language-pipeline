@@ -15,7 +15,7 @@ The wrapper code in this repository is MIT licensed. The model weights retain Go
 
 ## Status
 
-**Release-grade.** The inference contract, the adaptation contract and the real pinned checkpoint have been exercised locally (CPU and an RTX 5070 Ti), on CPU CI, and — for the `E2E` standalone tutorial at blob `15f946ab` — in a clean Kaggle Tesla T4 runtime on 2026-09-20 (recorded in `docs/release-verification.md`). A later notebook revision returns to Candidate until a clean-runtime execution of that exact blob is recorded. Production HTTP serving / DIMER worker packaging remains a separate serving-readiness milestone.
+**Candidate.** The 2026-09-20 Kaggle T4 run of blob `15f946ab` (14/14 ok, one restart after the install cell) is history: the notebook now builds a hash-locked isolated uv environment (generator /2.2, no restart) and declares NOTEBOOK_SPEC 2.2, so its blob changed and the status is **Candidate** (REL14) until a clean run of the new blob is recorded in `docs/release-verification.md`. The inference contract, the adaptation contract and the real pinned checkpoint have been exercised locally (CPU and an RTX 5070 Ti), on CPU CI, and — for the `E2E` standalone tutorial at blob `15f946ab` — in a clean Kaggle Tesla T4 runtime on 2026-09-20 (recorded in `docs/release-verification.md`). A later notebook revision returns to Candidate until a clean-runtime execution of that exact blob is recorded. Production HTTP serving / DIMER worker packaging remains a separate serving-readiness milestone.
 
 ## Capabilities
 
@@ -93,7 +93,7 @@ The default path runs on CPU and uses CUDA automatically when present (about thr
 
 ## Release status
 
-**Release-grade** — the `E2E` notebook blob `15f946ab` (committed at `f3dd43e`) executed top-to-bottom in a clean Kaggle Tesla T4 runtime on 2026-09-20 (14/14 ok (1 restart after install cell), 423.7 s); the record is in `docs/release-verification.md` and `STATUS.md`. Static and unit checks — including the standalone generator parity checks — are necessary but were never the evidence; the hosted run is. A later change to the carried modules or the notebook returns the status to Candidate until re-verified.
+**Candidate** — The 2026-09-20 Kaggle T4 run of blob `15f946ab` (14/14 ok, one restart after the install cell) is history: the notebook now builds a hash-locked isolated uv environment (generator /2.2, no restart) and declares NOTEBOOK_SPEC 2.2, so its blob changed and the status is **Candidate** (REL14) until a clean run of the new blob is recorded in `docs/release-verification.md`. Previously, the `E2E` notebook blob `15f946ab` (committed at `f3dd43e`) executed top-to-bottom in a clean Kaggle Tesla T4 runtime on 2026-09-20 (14/14 ok (1 restart after install cell), 423.7 s); the record is in `docs/release-verification.md` and `STATUS.md`. Static and unit checks — including the standalone generator parity checks — are necessary but were never the evidence; the hosted run is. A later change to the carried modules or the notebook returns the status to Candidate until re-verified.
 
 ## Score semantics
 

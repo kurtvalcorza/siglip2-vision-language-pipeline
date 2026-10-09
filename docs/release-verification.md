@@ -3,7 +3,7 @@
 `tutorials/siglip2_vision_language_colab.ipynb` (`E2E`, **standalone** carrier) is a **release candidate** until the
 exact notebook revision has executed top-to-bottom in a clean supported runtime. Unit tests, JSON validation,
 code-cell compilation, the generator parity checks and `tools/validate_release_assets.py` are necessary checks but
-are **not** runtime evidence under DIMER Notebook Specification 2.0 (REL8). This file is the durable release-gate
+are **not** runtime evidence under DIMER Notebook Specification 2.2 (REL8). This file is the durable release-gate
 record for the notebook.
 
 ## Automatic coverage (static, every pull request)
@@ -156,7 +156,7 @@ stated runtime, not general estimates.
 
 ## Current status
 
-**Release-grade.** The `E2E` notebook blob `15f946ab` (committed at `f3dd43e`) executed top-to-bottom in a clean Kaggle Tesla T4 runtime on 2026-09-20 (14/14 ok (1 restart after install cell), 423.7 s, 378 files, 1579 MB fetched from the Hub and digest-verified inside the notebook) with no repository checkout — the REL1/REL10 supported-runtime evidence this file gates on. The local pre-flight rows above are what preceded it and remain history. Any later change to the carried modules or to the notebook produces a new blob, and the registry returns to **Candidate** until a clean run of that blob is recorded here.
+**Candidate** (2026-10-09). The 2026-09-20 Kaggle T4 run of blob `15f946ab` (14/14 ok, one restart after the install cell) is history: the notebook now builds a hash-locked isolated uv environment (generator /2.2, no restart) and declares NOTEBOOK_SPEC 2.2, so its blob changed and the status is **Candidate** (REL14) until a clean run of the new blob is recorded in `docs/release-verification.md`. Previously: the `E2E` notebook blob `15f946ab` (committed at `f3dd43e`) executed top-to-bottom in a clean Kaggle Tesla T4 runtime on 2026-09-20 (14/14 ok (1 restart after install cell), 423.7 s, 378 files, 1579 MB fetched from the Hub and digest-verified inside the notebook) with no repository checkout — the REL1/REL10 supported-runtime evidence this file gates on. The local pre-flight rows above are what preceded it and remain history. Any later change to the carried modules or to the notebook produces a new blob, and the registry returns to **Candidate** until a clean run of that blob is recorded here.
 
 Facts a reviewer should still weigh: the frozen model is already a usable zero-shot classifier on the six species
 (accuracy 0.76 in the build record), so the adaptation gain is concentrated on the retrieval view (text-to-image mAP
