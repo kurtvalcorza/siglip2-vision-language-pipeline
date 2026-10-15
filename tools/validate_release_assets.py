@@ -680,6 +680,17 @@ def validate_notebooks() -> None:
     _check(meta.get("notebook_profile") == "MULTI-CAPABILITY", "Shared retrieval profile mismatch")
     _check(meta.get("standalone") is True, "Shared retrieval must be standalone")
     _check(meta.get("release_status") == "candidate", "Shared retrieval qualification remains pending")
+
+    # SVR2-m3: the shared workshop declares NOTEBOOK_SPEC 2.5, its kind, and the DOC17 use notice
+    # before the first code cell.
+    _check(meta.get("notebook_spec") == "2.5", "Shared retrieval must declare NOTEBOOK_SPEC 2.5")
+    _check(meta.get("notebook_kind") == "WORKSHOP",
+           "Shared retrieval must declare notebook_kind WORKSHOP")
+    _first_code = next(i for i, c in enumerate(shared["cells"]) if c.get("cell_type") == "code")
+    _check(any(c.get("cell_type") == "markdown"
+               and "".join(c.get("source", [])).startswith("> **⚠️ Notice.**")
+               for c in shared["cells"][:_first_code]),
+           "Shared retrieval needs the DOC17 use notice before its first code cell")
     shared_source = ""
     for cell in shared.get("cells", []):
         source = "".join(cell.get("source", []))
