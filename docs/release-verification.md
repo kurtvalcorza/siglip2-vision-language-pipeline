@@ -164,8 +164,9 @@ Facts a reviewer should still weigh: the frozen model is already a usable zero-s
 (accuracy 0.76 in the build record), so the adaptation gain is concentrated on the retrieval view (text-to-image mAP
 0.72 → 0.87) and on the worst-separated species (White-throated Sparrow recall 0.44 → 0.75) while top-1 accuracy moves
 by three photographs of 96 (0.760 → 0.792); the 48-photograph validation split moves accuracy in 2 % steps, which is
-why the epoch is selected on mAP; on an earlier 48-photograph test split the same recipe moved accuracy by anything
-from +2 to +12 points across epochs, which is what "no dispersion estimate" means here; the scientific-name prompt set
+why the epoch is selected on mAP; the build notes say that on an earlier 48-photograph test split the same recipe moved
+accuracy by +2 to +12 points across epochs, and the vision-only trainable scope was kept because it gained on that split
+(no record survives; see the row 82 section below); the scientific-name prompt set
 is scored so a reviewer can see how much of the number is the prompt's; and the drawn shapes re-scored after
 adaptation are three images of evidence about behaviour outside the corpus, not a measurement.
 
@@ -253,3 +254,51 @@ Applies only to `DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb`: not
   Chance R@1 0.003 / 0.003; colour keyword 0.008 / 0.009. BLIP ITM reranking of the top 5 (SigLIP 2 / SigLIP v1 / BLIP ITC candidates): image→text 0.841 / 0.833 / 0.802; like-for-like coarse text→image 0.686 / 0.663 / 0.625 → reranked 0.730 / 0.733 / 0.707; ITM pair accuracy 0.779 / 0.766 / 0.681; 4,668 pair evaluations each. The exploratory paired table (24 comparisons, photograph bootstrap 2,000 resamples, seed 0) and the fixed-query gallery table (70 core photographs) printed.
 - **Results vs the 0.3.0 run above:** not comparable number for number, because the test gallery lost two photographs (391 / 1,737 → 389 / 1,729). Qualitatively the same: SigLIP 2 ≥ SigLIP v1 > BLIP ITC on coarse R@1 (image→text 0.790 / 0.783 / 0.742 → 0.789 / 0.781 / 0.740; text→image 0.721 / 0.716 / 0.652 at three decimals in both), ITM reranking still lifts every candidate source, and the validation table (40 photographs) is identical. The Flickr30k row, the bootstrap intervals and the fixed-query table are new in this revision.
 - **Boundary:** saved outputs were inspected. Forms and uploads were not exercised; FULL adaptation, BYOD and the rejected-archive path (REL12) remain required before release. Status remains **Candidate**; `metadata.dimer.clean_runtime_evidence` is unchanged.
+
+## Row 82 review fixes — pre-registered grid and fresh test (2026-10-18)
+
+- **Pre-registration:** `docs/siglip2-preregistration.md`, committed alone at `1b5f790` before any grid run, any
+  fresh-test download and any code change.
+- **Fresh test:** 96 photographs (16 per species) drawn by `tools/draw_fresh_test.py` on 2026-10-18 under section 4 of
+  the pre-registration.
+  - Pool: iNaturalist API v1, research-grade CC0, created 2025-03-01..2026-10-17; created dates of the drawn photographs
+    run 2025-03-09..2026-10-10.
+  - Screens: 0 observers shared with the 360; 24 candidates skipped as repeat observers; 0 same-place-same-day
+    exclusions; 0 exact copies.
+  - Near-duplicates: pHash threshold T = 10, set on 1,440 synthetic copies of the 360 (99th percentile; 0 of 64,620
+    distinct pairs of the 360 within T). 0 hash hits against the 360 or within the fresh set, so no content check was
+    needed.
+  - Pins: manifest SHA-256 `019d38f4026011ee88fb6606ffdbecec23cd81f1e9eb7ac2452eb93edc20c862`, 15,015,075 bytes; log in
+    `docs/siglip2-fresh-test-draw.json`.
+- **Code correction:** `adapt()` kept the epoch with the best validation **accuracy** although it was documented as
+  text-to-image mAP; it now selects on mAP. The recorded runs of the previous blob kept epoch 4, which is also their
+  mAP-best epoch.
+- **Evaluation of record:** none yet (`RECORDED_EVALUATION = None`). The first hosted pre-registered run of the new
+  blob is the evaluation of record; later identical runs are reproductions. No fresh-test number has been computed by
+  anyone: the CPU build record below ran with the fresh test **masked**.
+
+### CPU build record, fresh test masked (2026-10-18; not a hosted run)
+
+- **What ran:** `tools/run_notebook.py` on the notebook generated at `b4a02ac` (the code commit; carried modules
+  identical to the regeneration stamp). Build workstation CPU, float32, torch 2.14.0+cpu, transformers 4.57.6,
+  `DIMER_NOTEBOOK_CI_PREINSTALLED=1`, `HF_HUB_OFFLINE=1`, **`DIMER_FRESH_TEST_MASK=1`**. 748 s end to end, exit 0.
+- **Score-once check:** the run printed `preregistered: False`, `test_look: not scored (exploratory)`,
+  `settings_differing: ['fresh_manifest_sha256', 'fresh_test_masked']`. Every file it wrote carries `_exploratory_1`.
+  The fresh test was neither fetched nor scored, so there is **no development look** at it.
+- **Grid (validation t2i mAP, best epoch):** C0 0.8758 (epoch 4), C1 0.8763 (epoch 5), C2 0.8667 (epoch 4); frozen
+  0.6798. The rule kept **C0** ("no challenger beat C0 by 0.02"). Grid 503.3 s on CPU.
+- **7b (C0):** validation mAP 0.680 → 0.874 → 0.854 → 0.863 → 0.876 → 0.872 → 0.854, epoch 4 kept by mAP; 164.7 s.
+- **Exposed development test (96; continuity only):**
+
+  | Metric | Majority | Neighbour | Frozen | Adapted (old → new) |
+  |---|---|---|---|---|
+  | accuracy | 0.167 | 0.26 | 0.76 | 0.792 → 0.792 |
+  | macro F1 | 0.048 | 0.261 | 0.758 | 0.793 → 0.793 |
+  | t2i mAP | 0.203 | 0.212 | 0.723 | 0.871 → 0.871 |
+  | scientific-name mAP | | | 0.467 | 0.492 → 0.492 |
+
+  "Old" is the 2026-10-09 Colab CLI T4 run of blob `b3ae91fd`. The configuration and epoch are unchanged (C0,
+  epoch 4), so the numbers are unchanged.
+- **Other outputs:** shapes top-1 1.0 / recall@1 1.0 before and after; adapter 45 tensors / 85,062,712 B; reload
+  parity 8/8, max abs difference 0.0.
+- **Fresh test:** not scored. Its first scoring is the hosted pre-registered run.
