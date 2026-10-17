@@ -50,8 +50,8 @@ CODE_MARKERS = (
     "splits = build_sample_dataset(corpus, seed=SPLIT_SEED)",
     "records = load_byod_dataset(byod_path)",
     "splits = split_dataset(records, seed=SPLIT_SEED)",
-    "dataset_manifests = {name: validate_dataset(part) for name, part in splits.items()}",
-    "disjoint = check_split_disjoint(splits)",
+    "dataset_manifests = {name: validate_dataset(part, min_records=MIN_RECORDS if name == 'train' else 1) for name, part in splits.items()}",
+    "disjoint = check_split_disjoint({**splits, **({'fresh_test': fresh_manifest['records']} if fresh_manifest else {})})",
     "'observer_overlap': observer_overlap(splits)",
     "classes = class_names(train_records)",
     "write_dataset_csv(train_records, 'outputs/siglip2_vision_language_train.csv')",
@@ -67,20 +67,23 @@ CODE_MARKERS = (
     "shape_embeddings = pipe.embed_image(shape_images)",
     "targets = {'labels': shape_labels, 'retrieval_indices': list(range(len(shape_images)))}",
     "frozen_scene = evaluation_report(result, targets, sample_kind='synthetic')",
-    "baseline_majority = majority_baseline(train_records, test_records, classes)",
-    "baseline_neighbour = colour_neighbour_baseline(train_records, test_records, classes)",
-    "frozen_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)",
-    "frozen_scientific = pipe.evaluate(test_records, classes=classes, class_names_map=scientific_names, prompt_template='This is a photo of {label}.')",
-    "frozen_verdict = 'above the baselines' if frozen_test['t2i_map'] > baseline_majority['t2i_map'] and frozen_test['accuracy'] > baseline_neighbour['accuracy'] else",
-    "adapt_result = pipe.adapt(train_records, val_records, epochs=EPOCHS, lr=LEARNING_RATE, batch_size=BATCH_SIZE, trainable_vision_layers=TRAINABLE_VISION_LAYERS, class_names_map=display_names, progress=report)",
-    "adapted_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)",
+    "baseline_majority = majority_baseline(train_records, dev_records, classes)",
+    "baseline_neighbour = colour_neighbour_baseline(train_records, dev_records, classes)",
+    "frozen_dev = pipe.evaluate(dev_records, classes=classes, class_names_map=display_names)",
+    "frozen_dev_scientific = pipe.evaluate(dev_records, classes=classes, class_names_map=scientific_names, prompt_template='This is a photo of {label}.')",
+    "frozen_verdict = 'above the baselines' if frozen_dev['t2i_map'] > baseline_majority['t2i_map'] and frozen_dev['accuracy'] > baseline_neighbour['accuracy'] else",
+    "grid_selection = select_config(",
+    "adapt_result = pipe.adapt(train_records, val_records, epochs=EPOCHS, lr=lr_used, batch_size=BATCH_SIZE, trainable_vision_layers=layers_used, class_names_map=display_names, seed=ADAPT_SEED, progress=report)",
+    "adapted_dev = pipe.evaluate(dev_records, classes=classes, class_names_map=display_names)",
+    "differing = settings_differing(run_settings, grid_selection, run_fingerprint_now, model_state)",
+    "fresh_test = {'n': len(fresh_records), **compare(majority_baseline(train_records, fresh_records, classes)",
     "adapted_val = pipe.evaluate(val_records, classes=classes, class_names_map=display_names)",
-    "comparison['verdicts'] = {'frozen_vs_baselines': frozen_verdict, 'adapted_vs_frozen_t2i_map': adaptation_verdict",
+    "table['verdict']['adapted_vs_frozen_' + metric] = 'improved' if delta > 0 else",
     "adapted_scene = evaluation_report({'classifications': adapted_classifications, 'retrievals': adapted_retrievals, 'gallery_ids': [p.name for p in shape_images]}, targets, sample_kind='synthetic')",
-    "pipe.save_artifact(artifact_dir, metadata={'tutorial': 'siglip2_vision_language', 'data_source': data_source})",
+    "pipe.save_artifact(artifact_dir, metadata={'tutorial': 'siglip2_vision_language', 'data_source': data_source, 'test_look': test_look, 'settings_differing': differing})",
     "reloaded = Siglip2Pipeline.from_artifact(artifact_dir, weights_dir=WEIGHTS_DIR, device=pipe.device)",
     "assert parity['identical_rows'] == parity['of']",
-    "write_provenance('outputs/provenance.json', pipeline=pipe)",
+    "write_provenance(suffixed('outputs/provenance.json'), pipeline=pipe)",
     "'model_revision': MODEL_REVISION",
     "'model_license': MODEL_LICENSE",
     "'weight_file': MODEL_FILENAME, 'weight_format': 'safetensors, digest-verified', 'weight_sha256': MODEL_SHA256",
@@ -105,14 +108,13 @@ MARKDOWN_MARKERS = (
     "**no dispersion estimate**",
     "**Snapshot note:**",
     "object detection, semantic segmentation, OCR, caption generation",
-    "## 4. iNaturalist photographs and split",
+    "## 4. iNaturalist photographs, splits and the fresh test",
     "## 5. Classify through the inference contract",
-    "## 6. Baselines and the frozen model's zero-shot score on the test photographs",
-    "## 7. Bounded fine-tuning of the vision tower's last blocks",
-    "## 8. Held-out evaluation",
-    "## 9. Re-score the drawn shapes, export the adapter and reload it",
-    "**Leakage:**",
-    "**Prompts:**",
+    "## 6. Baselines and the frozen model on the exposed development test",
+    "## 7. A pre-registered configuration grid on validation",
+    "## 7b. Bounded fine-tuning of the vision tower's last blocks",
+    "## 8. The fresh test, scored only under the pre-registered settings",
+    "**Leakage and exposure:**",
 )
 # Direct-library use that must stay inside the carried module cells (G2: the notebook calls the
 # pipeline API, it does not reimplement it). Checked on every code cell except the embedded ones
@@ -151,7 +153,7 @@ INSTALL_CELL_MARKER = "def _isolated_environment_ready():"
 # Specification 2.0; see docs/release-verification.md for the release gate.
 # ---------------------------------------------------------------------------
 
-NOTEBOOK_SPEC = "2.2"
+NOTEBOOK_SPEC = "2.5"
 ALLOWED_PROFILES = {"E2E", "ARTIFACT-INFERENCE", "TASK-INFERENCE", "MULTI-CAPABILITY", "SMOKE"}
 STATUS_TOKENS = ("Candidate", "Release-grade")
 PLACEHOLDER = re.compile(r"\b(TODO|TBD|FIXME)\b|Insert text here|Tooltip:", re.I)
@@ -226,7 +228,7 @@ COMMON_MARKDOWN_MARKERS = (
     "without the repository being",
     "It does **not** establish benchmark superiority",
     "## References",
-    f"- Repository model card: https://github.com/kurtvalcorza/{REPO_NAME}/blob/main/MODEL_CARD.md",
+    f"Available: https://github.com/kurtvalcorza/{REPO_NAME}",
 )
 # Patterns that must never appear in tutorial code (comment-stripped), in any cell.
 FORBIDDEN_PATTERNS = (

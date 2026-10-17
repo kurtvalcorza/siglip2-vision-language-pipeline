@@ -1,11 +1,17 @@
 """Labelled-image dataset contract for adapting the zero-shot classifier: the pinned iNaturalist bird sample,
 validation, seeded splitting, BYOD loaders and CSV export.
 
-The default dataset is **real** and out of what the checkpoint's web-scale captions describe precisely: 360
-CC0-licensed, research-grade iNaturalist photographs of six common North American birds (60 per species, one
-per observer per species; four small sparrows, a junco and two finches that a zero-shot prompt separates
-only partly), chosen a priori on 2026-09-19 and pinned here by photo id, byte size and SHA-256 of the served
-`medium` JPEG. Every file is fetched from the iNaturalist open-data bucket at run time and refused on any
+The default dataset is **real**: 360 CC0-licensed, research-grade iNaturalist photographs of six common North
+American birds (60 per species, one per observer per species; four small sparrows, a junco and two finches that a
+zero-shot prompt separates only partly), chosen on 2026-09-19 and pinned here by photo id, byte size and SHA-256 of
+the served `medium` JPEG. Their seeded split gives 216 training, 48 validation and 96 **exposed development test**
+photographs (scored in every earlier run, so they inform no decision). A **fresh test** of 96 further photographs
+(`FRESH_TEST_RECORDS`; docs/siglip2-preregistration.md section 4) is scored only under the pre-registered settings.
+
+Pretraining overlap (DAT9): the photographs are public web images and SigLIP 2's WebLI training set has no
+published instance manifest, so overlap cannot be ruled out. 255 of the 360 (74 of the 96 exposed) were created on
+iNaturalist before the SigLIP 2 release (2025-02-20); the fresh test was created on or after 2025-03-01, which
+narrows but does not remove the risk. Every file is fetched from the iNaturalist open-data bucket at run time and refused on any
 byte-size or SHA-256 mismatch; the repository redistributes none of the photographs. Each record keeps the
 observation id and observer login so every image is traceable to its public observation page.
 
@@ -3657,6 +3663,109 @@ SAMPLE_RECORDS: tuple[tuple[str, str, int, int, str, int, str, str], ...] = (
         "jpeg",
     ),
 )
+FRESH_TEST_RECORDS: tuple[tuple[str, str, int, int, str, str, str, int, str, str], ...] = (
+    ('fresh-song_sparrow-00', 'song_sparrow', 615562176, 338480398, 'nonbinary-naturalist', '2026-02-13', '2026-02-13', 231090, '1c206f3fc93acb6ea84d855a39f0b10f3fe6f1856d80a5f7057ab6255bdbe384', 'jpg'),
+    ('fresh-song_sparrow-01', 'song_sparrow', 598100272, 329901587, 'eschov39', '2025-12-07', '2025-12-06', 272861, '9438dd1dcbae0f3929fdd01cbaea386177627e2e3ac39d20af82110406e5f6f4', 'jpg'),
+    ('fresh-song_sparrow-02', 'song_sparrow', 583614652, 322596182, 'eben7', '2025-10-23', '2025-10-21', 82938, 'd9f803db1fcf497fc4a507dcb9e203dabe2aeaa90dc93543f68d744c58bf741f', 'jpg'),
+    ('fresh-song_sparrow-03', 'song_sparrow', 622566201, 341938726, 'sandiegonudi', '2026-03-08', '2026-03-08', 95998, 'ed9cab7b32ce2698d46065086411c14c75845b9a8e050d833f8d3b80894bb4d3', 'jpg'),
+    ('fresh-song_sparrow-04', 'song_sparrow', 531496360, 295247690, 'zstandig', '2025-07-04', '2025-07-02', 126592, 'f05d57a637160bcdb95ff9c3a4a5e0eb975d24dfa36529b7743a3b007d28a676', 'jpg'),
+    ('fresh-song_sparrow-05', 'song_sparrow', 721643790, 393692798, 'swords', '2026-08-22', '2026-08-18', 42032, 'e8d2ae73ab9d932e48161eedeec8c698097ddb34cc20f7a04b2a716866be9957', 'jpg'),
+    ('fresh-song_sparrow-06', 'song_sparrow', 666061593, 364842689, 'scneill', '2026-05-24', '2026-05-24', 106024, '6ed94f9ea3f9101381a9055f0463437d1dbbd3641f85a19960727597d3131764', 'jpg'),
+    ('fresh-song_sparrow-07', 'song_sparrow', 490055335, 272389827, 'hllrnnr', '2025-04-23', '2025-04-22', 90899, '523a97dbb17a5eff409776845af4afe34bdd191237caed7d5c8e8d55f771f84d', 'jpg'),
+    ('fresh-song_sparrow-08', 'song_sparrow', 626136140, 343699388, 'cynthia722', '2026-03-18', '2026-03-15', 86307, '230bec884654fe68d86924b39997ca55ce2ec4355ada302a155d4fe4584fdbf4', 'jpg'),
+    ('fresh-song_sparrow-09', 'song_sparrow', 675399926, 369740524, 'bobagrub', '2026-06-08', '2018-05-28', 46999, 'b71571a87c1f989c6b4e61067da77995d463a47794edd0dd95e8ef79c5d58c37', 'jpg'),
+    ('fresh-song_sparrow-10', 'song_sparrow', 606635462, 334092263, 'dillon_alexander', '2026-01-09', '2026-01-09', 133757, '7a41c4de74e81e995121b9e2c0d7baa40f95ec6317b7459366b0fabfbd3a1164', 'jpg'),
+    ('fresh-song_sparrow-11', 'song_sparrow', 618494245, 339934222, 'sheilsun', '2026-02-23', '2026-02-23', 55456, 'bf64d27e2044e43feec3e6adf1df8bf9d573762ddf9b0167387a74a82c7700f3', 'jpg'),
+    ('fresh-song_sparrow-12', 'song_sparrow', 666890788, 365278555, 'prairiewolf06', '2026-05-25', '2026-05-23', 175025, 'e5a7d5ffe5cf4a99c198e56d890f2944bfa84b0c28b37518ce770e75300612ab', 'jpg'),
+    ('fresh-song_sparrow-13', 'song_sparrow', 514362258, 286135144, 'manticoremx', '2025-06-01', '2025-06-01', 40151, 'f12e3c180ce968d4cdf07c3c0e8912cc1627c5a40145c31d4cf74ce624334d34', 'jpg'),
+    ('fresh-song_sparrow-14', 'song_sparrow', 635098038, 348247766, 'natural_lucas', '2026-04-08', '2026-04-07', 118433, 'ca9ebb6fdfb24b655b32dc23752704fde440df6abdc18cbb5335849796525533', 'jpg'),
+    ('fresh-song_sparrow-15', 'song_sparrow', 556408305, 308407840, 'mycodelphian', '2025-08-23', '2025-08-23', 169433, '2210a6f5de829804a8e8a7c5113ef93f521181561121d3813c519994482d2702', 'jpg'),
+    ('fresh-chipping_sparrow-00', 'chipping_sparrow', 631131256, 346249180, 'liz_bullock', '2026-03-30', '2026-03-30', 189670, '76b76b607c6b4b2fed443f6bafee33408953b22f9bffc726b55591dbcb199d93', 'jpg'),
+    ('fresh-chipping_sparrow-01', 'chipping_sparrow', 618567506, 339972454, 'jujuwild', '2026-02-23', '2026-02-22', 157119, '7c7fbe4682077b850f241a192574e2b2434b2a01ab0ce6fedd3d3b6be1eae82e', 'jpg'),
+    ('fresh-chipping_sparrow-02', 'chipping_sparrow', 512640637, 285211754, 'plantpurrson', '2025-05-29', '2025-05-29', 152420, '67bde2e93d93a58ede42a1d3c69fc65da245b7f751610a0d5bb9c5ff7b740bed', 'jpg'),
+    ('fresh-chipping_sparrow-03', 'chipping_sparrow', 655692224, 359380604, 'morekari', '2026-05-07', '2026-05-07', 311966, 'eaff1b7a7e1b3edfa20d7871d9d3b5a81b9efa60db0107d9a65c920028a124f4', 'jpg'),
+    ('fresh-chipping_sparrow-04', 'chipping_sparrow', 693927447, 379362663, 'andreamm93', '2026-07-08', '2026-06-10', 34794, '89cc9d5b6ef6b1c1c28e60f27cc99862505600d6f5d5d650176a9616a308b61d', 'jpg'),
+    ('fresh-chipping_sparrow-05', 'chipping_sparrow', 704479551, 384843748, 'oecophylla', '2026-07-25', '2026-07-09', 164431, '77483310841dbd41e7fd384e05363d6fcdb0bbadb70371af7969b06e8ac964b7', 'jpg'),
+    ('fresh-chipping_sparrow-06', 'chipping_sparrow', 514855153, 286391478, 'funnieanimals', '2025-06-02', '2025-06-02', 227458, '7dcd544957b643df210d9a9cfb67fcaa4e53d4b4875b7c470ddbaa788c8e2802', 'jpg'),
+    ('fresh-chipping_sparrow-07', 'chipping_sparrow', 528929811, 293885957, 'natgrace18', '2025-06-29', '2025-06-29', 216131, 'cef2beeda07f502585e6d83818334fd174fa25d9c1285f612f239d852b15dd40', 'jpg'),
+    ('fresh-chipping_sparrow-08', 'chipping_sparrow', 624366579, 342827265, 'hikenc', '2026-03-13', '2026-03-13', 162914, 'f5dca70620af6b014cbc52820fe424ba64f66648b17cb153ffda39dd06e6fd9d', 'jpg'),
+    ('fresh-chipping_sparrow-09', 'chipping_sparrow', 565898699, 313375817, 'schneepschnorp', '2025-09-12', '2025-08-27', 68078, '1b1ccf5b92063a4b7f2c94476f82d9a910de4b054544ebba76e3cb3bc3e25b4b', 'jpg'),
+    ('fresh-chipping_sparrow-10', 'chipping_sparrow', 653675897, 358333004, 'tmcelrath', '2026-05-04', '2026-05-04', 253146, 'ac0d967385172e90eb255b6cfbfd069647c82121212bc326567f2a46986043a0', 'jpg'),
+    ('fresh-chipping_sparrow-11', 'chipping_sparrow', 497032247, 276791934, 'hailjubjub', '2025-04-29', '2025-04-29', 365532, '6f7a014f5216ff473e1fec563c2eb69332f3500f2ad744e22adf1df0781e3d11', 'jpg'),
+    ('fresh-chipping_sparrow-12', 'chipping_sparrow', 510893901, 284287188, 'mheff449', '2025-05-26', '2025-05-26', 333966, '95390b10e597c43f2fc581497027f30d00a2c16b1045ededb02e9f9044bab309', 'jpg'),
+    ('fresh-chipping_sparrow-13', 'chipping_sparrow', 700628001, 382830769, 'macromatt', '2026-07-18', '2026-07-18', 42396, '586b31ce7e7fc7a0954ded845dbffa49200addc68d027896b1ef12958d1b5bab', 'jpg'),
+    ('fresh-chipping_sparrow-14', 'chipping_sparrow', 510552876, 284107182, 'walkingfern', '2025-05-25', '2025-04-19', 58997, '15b0da9e605d43781d415f3b0f0a6ad1fd478e7bb73be5d783fd635711bb8546', 'jpg'),
+    ('fresh-chipping_sparrow-15', 'chipping_sparrow', 634788003, 348093061, 'aqua4631', '2026-04-07', '2026-04-07', 205052, '70cd65c5d5b4d3a525605081cf1a7d133cef7d469fd3ccaa43d7b07b933f4b17', 'jpg'),
+    ('fresh-white_throated_sparrow-00', 'white_throated_sparrow', 599918806, 330788227, 'smacdonn', '2025-12-14', '2025-12-14', 216366, '2ea5d733b58d00500d322d111b83d33d4316a05d9bd45afa843d8e375cb87d69', 'jpg'),
+    ('fresh-white_throated_sparrow-01', 'white_throated_sparrow', 642869089, 352225184, 'decaturjosh', '2026-04-23', '2026-04-20', 306500, 'f51ca0b054de333be776d046d7fe21726d9347f3696023b1680b155a1bc0900b', 'jpg'),
+    ('fresh-white_throated_sparrow-02', 'white_throated_sparrow', 647934718, 355248852, 'jacksonkusack', '2026-04-27', '2026-04-25', 99632, 'ce1ab59913d1213c9f181ad621b6e543c4db91b5942736d30589ce650534e584', 'jpg'),
+    ('fresh-white_throated_sparrow-03', 'white_throated_sparrow', 602460507, 332024084, 'mechaffeine', '2025-12-25', '2025-12-24', 324082, '0a2930e9766f0dd1801b618caac8d528b3872b13d01d73a913fd6eedeaf3a273', 'jpg'),
+    ('fresh-white_throated_sparrow-04', 'white_throated_sparrow', 555718472, 308050263, 'benwalters', '2025-08-21', '2025-08-21', 347389, '58114ab8d8b0efbc80c4822156566ef9c83ac5a84472b080f24f43a2498d7677', 'jpg'),
+    ('fresh-white_throated_sparrow-05', 'white_throated_sparrow', 599838873, 330747938, 'matthewrine', '2025-12-14', '2025-12-14', 214144, '0ecf4462e1db76cfb990fae63004c72442f482c877137e2c4696776bce6c1484', 'jpg'),
+    ('fresh-white_throated_sparrow-06', 'white_throated_sparrow', 603059205, 332314490, 'bugmaniac119', '2025-12-27', '2025-12-15', 101170, '56299a74b02347b4e6a5a029bec9762b880e87d6be1aa2b21a303ccf34fdf44a', 'jpg'),
+    ('fresh-white_throated_sparrow-07', 'white_throated_sparrow', 597446928, 329577014, 'deannawillistonofs', '2025-12-05', '2025-12-05', 232669, '1af42aa7bf026d0f99ad39e3ded0431b072a8646e913358da31b756c24c31337', 'jpg'),
+    ('fresh-white_throated_sparrow-08', 'white_throated_sparrow', 738837472, 402463387, 'edwinwilke', '2026-09-22', '2026-09-22', 199047, '9899ea06760fd9aa92a7f5af1da3dccaeadd6452e236c9d30755e22f06a0d127', 'jpg'),
+    ('fresh-white_throated_sparrow-09', 'white_throated_sparrow', 624501902, 342893481, 'wander1116', '2026-03-14', '2026-02-28', 92642, '3374ac42f099eb16be5096d4c383d10dc2418dc59df0bc4875258a36646cfe45', 'jpg'),
+    ('fresh-white_throated_sparrow-10', 'white_throated_sparrow', 644157341, 353005482, 'soo_moths', '2026-04-24', '2026-04-24', 243320, '116d6cf84b2d65fd3d7b878d878ace1478106ffaf75b9c06734b372d9539c870', 'jpg'),
+    ('fresh-white_throated_sparrow-11', 'white_throated_sparrow', 659297867, 361268402, 'mrspteranodon', '2026-05-13', '2026-05-13', 178973, 'dc7668e7092638c981328758b9d5ba20792af63ffaed01ddcef047a57afdbf91', 'jpg'),
+    ('fresh-white_throated_sparrow-12', 'white_throated_sparrow', 593518387, 327593589, 'nickajacket', '2025-11-21', '2025-11-16', 182090, '0d3ed00a760c54a3dbe474ced7503e997a037b8b4b90d20ebb92333ab88b7d17', 'jpg'),
+    ('fresh-white_throated_sparrow-13', 'white_throated_sparrow', 479772143, 267001440, 'sciencegirl02', '2025-03-25', '2025-03-25', 97352, '94faa58b6b90c65e7c54d0e8a81cd0fb8fc34593347f1f2879e15b199346d114', 'jpg'),
+    ('fresh-white_throated_sparrow-14', 'white_throated_sparrow', 475411321, 264738629, 'mmsorensen', '2025-03-09', '2025-03-09', 89715, 'a9897e7104c6c9b6958ab3dcc1cd4e3173cbeb03bc46c88ed5c91f8194a22020', 'jpg'),
+    ('fresh-white_throated_sparrow-15', 'white_throated_sparrow', 743413026, 404789542, 'kevinliam', '2026-09-30', '2026-09-30', 148866, 'a90b86269aa9cfb2a88fffe0f1ad5184fd13f4764e56d2dd07a092afaa84d054', 'jpg'),
+    ('fresh-dark_eyed_junco-00', 'dark_eyed_junco', 611282063, 336390795, 'vince13', '2026-01-27', '2026-01-27', 86976, '52c044dea778dc3558d993a0a8a6b3bc20eeaa0a1cfeee72b386cdea7606574d', 'jpg'),
+    ('fresh-dark_eyed_junco-01', 'dark_eyed_junco', 748681133, 407443718, 'enzymatic', '2026-10-10', '2026-08-21', 157349, '8c1006cfda41e10b8882c1422d8dbe353ddeec37d78d122f217a6ae31176f1df', 'jpg'),
+    ('fresh-dark_eyed_junco-02', 'dark_eyed_junco', 612787804, 337129366, 'brd23', '2026-02-02', '2026-02-01', 113781, '4c66c9a104f78e5d0fc25bdda857f548418365bb88dfe8da3808e3a7aaab954b', 'jpg'),
+    ('fresh-dark_eyed_junco-03', 'dark_eyed_junco', 606809012, 334178270, 'jzupan', '2026-01-09', '2026-01-09', 126386, '5b6828e632422956624c4cd9b93a1217d0d038f040b40e6904c8338dc94fecd1', 'jpg'),
+    ('fresh-dark_eyed_junco-04', 'dark_eyed_junco', 720590615, 393152453, 'margherita_bg', '2026-08-21', '2026-08-18', 73888, 'b2870a8ccde1d3db06fc70c2b586be52f7ce11f52e6b104d8213efd66f2d1f1d', 'jpg'),
+    ('fresh-dark_eyed_junco-05', 'dark_eyed_junco', 545004695, 302410412, 'brennon3', '2025-07-30', '2025-07-30', 174433, '6eb089724fb3170eef40455f0df9df9d848fcc19f8484a830cec8a16b7b66795', 'jpg'),
+    ('fresh-dark_eyed_junco-06', 'dark_eyed_junco', 676086948, 370097876, 'chrisgarrod', '2026-06-09', '2026-06-09', 171958, 'f7995f265d283bcdeb079d4505731c1c85d97e5b9e47ee31fa8bbd479d42f6e6', 'jpg'),
+    ('fresh-dark_eyed_junco-07', 'dark_eyed_junco', 619599443, 340474755, 'jacinthes', '2026-02-27', '2025-10-05', 154348, '712966e57973cb8f490f9ed54cddcb69acb604e534a3ae31b5d4f045e95d7827', 'jpg'),
+    ('fresh-dark_eyed_junco-08', 'dark_eyed_junco', 630737244, 346051098, 'kk6zly', '2026-03-29', '2026-03-29', 65684, '6d2aa55c6b02a18df4bef71f167a25d7d904765c95f58e7da915096ac454fa02', 'jpg'),
+    ('fresh-dark_eyed_junco-09', 'dark_eyed_junco', 505972393, 281652257, 'kallummcdonald', '2025-05-16', '2025-05-16', 276417, '8c731b8190fe7cc81a631d95341beb10df835ddfc8a06a0290f3cc96265a1016', 'jpg'),
+    ('fresh-dark_eyed_junco-10', 'dark_eyed_junco', 613787544, 337616475, 'observerofbeauty', '2026-02-06', '2025-12-28', 56705, 'f869ba2907ac7bd5005b90166a31363aafe831de7c4cca8899ef579349f7832d', 'jpg'),
+    ('fresh-dark_eyed_junco-11', 'dark_eyed_junco', 486695447, 270613525, 'bria63481', '2025-04-15', '2025-04-15', 185320, 'f29c0d8ae4f8076e49291ae5f4e5c8a0736ed72c8b27ff4bc3703d954b9663ec', 'jpeg'),
+    ('fresh-dark_eyed_junco-12', 'dark_eyed_junco', 602736536, 332157558, 'theraffe', '2025-12-26', '2025-12-15', 184316, 'd97a52b8169ed0eb6e3cbe82ca379a43a39471f2fc8c13fb6b89d55ee7b30edc', 'jpg'),
+    ('fresh-dark_eyed_junco-13', 'dark_eyed_junco', 487870941, 271233232, 'ceeec', '2025-04-18', '2025-04-18', 147101, 'd51a9c1594fabe6f73966500b51fe2874082350d3630f3c6a10d28b8dfc88c20', 'jpeg'),
+    ('fresh-dark_eyed_junco-14', 'dark_eyed_junco', 484836782, 269639339, 'jacmoy123', '2025-04-10', '2025-04-10', 152388, '6d710eb095909d2f522779088b8246f3862d45deb68b276ee0ceba8177e901f2', 'jpeg'),
+    ('fresh-dark_eyed_junco-15', 'dark_eyed_junco', 611430652, 336464252, 'outdoormatt', '2026-01-28', '2026-01-28', 61399, '4c579b9a66ad9a43c9f571b85b03fd58e1e52d72c88c58202b65a1c36b700910', 'jpg'),
+    ('fresh-house_finch-00', 'house_finch', 633331583, 347359715, 'mr_satterly', '2026-04-04', '2026-04-03', 48829, '4a99cef3b389c8238b4254b5772a84c1e94327481b95d0efa570f45d1e0506b8', 'jpg'),
+    ('fresh-house_finch-01', 'house_finch', 479858598, 267045837, 'hdegaetano', '2025-03-26', '2025-03-26', 41765, '5c0a2ab9dfc494e01fb829a0a4dc991378f4b5b0bcb3da9130f7c95ef1677e81', 'jpg'),
+    ('fresh-house_finch-02', 'house_finch', 642046907, 351804744, 'hacole', '2026-04-21', '2026-04-20', 181728, '263cea1ecb5f245abe3b28cb1f725ee6fa025418850de3b55226643462270445', 'jpg'),
+    ('fresh-house_finch-03', 'house_finch', 499941156, 278432103, 'mikoikoi', '2025-05-04', '2025-05-03', 119160, 'afe3fde0064e425ca9c1d959badb71be80ffd394fa09f0de1f4dcb092c28a568', 'jpeg'),
+    ('fresh-house_finch-04', 'house_finch', 621456415, 341381356, 'vrose96', '2026-03-05', '2026-03-05', 224282, '11bcc8cd23084c55600196ecb93d3ee78dd2325ab57aabd8c9da4f32c7339ae1', 'jpg'),
+    ('fresh-house_finch-05', 'house_finch', 605907686, 333735683, 'ttgtx', '2026-01-06', '2026-01-05', 149862, '02c8896b44f8bee23cdb0e9678aeace4aed9bbc44a5551f131302b6abc9c68d0', 'jpg'),
+    ('fresh-house_finch-06', 'house_finch', 496070372, 276207282, 'esuchman', '2025-04-28', '2025-04-27', 42548, '5a6daf4e8352dad2c385aa9678662c76886bdff68f3f194d8ce3d42602234b53', 'jpg'),
+    ('fresh-house_finch-07', 'house_finch', 670749640, 367297340, 'bfberauer', '2026-05-31', '2026-05-31', 183055, 'b2adf52a93b1c711e1187ccd9de6defc5ffc6b5a458000c86a9d35f09c67214b', 'jpg'),
+    ('fresh-house_finch-08', 'house_finch', 625739271, 343504985, 'samk', '2026-03-17', '2026-03-17', 130360, 'd1a8dd987bfcefa7b9efdd31c84359da0d99a85faadd9ce3a1aa51817e86f71c', 'jpg'),
+    ('fresh-house_finch-09', 'house_finch', 633742614, 347565757, 'ollief09', '2026-04-05', '2026-04-05', 192254, '973316b28aeb2b322ffdd7a3a6aeca1a20daee07c559ec7bb5229e4457287744', 'jpg'),
+    ('fresh-house_finch-10', 'house_finch', 526061432, 292332193, 'malwhile', '2025-06-24', '2025-06-19', 215548, '9ce764762146aa8fde5b7d2c91d2cc0825e380f1b6ebc49607b93e0174215f98', 'jpg'),
+    ('fresh-house_finch-11', 'house_finch', 683763459, 374111715, 'dillonknott0', '2026-06-21', '2026-06-21', 144203, '856b5d9c505f97803deb4f8f511c744006325789e24113ccddbcd6cc145bac79', 'jpg'),
+    ('fresh-house_finch-12', 'house_finch', 677658115, 370916426, 'elinpierce', '2026-06-12', '2026-06-11', 136484, '858a73785eed8668dfe6f41103b2363e7c220bb2c798eac58b2a300270063514', 'jpg'),
+    ('fresh-house_finch-13', 'house_finch', 688568805, 376590896, 'nikherzog', '2026-06-29', '2026-06-29', 238991, 'cf5e6f384247b2d91167cbe22944582389ac9253c71c170c2f08c300b8a9519d', 'jpg'),
+    ('fresh-house_finch-14', 'house_finch', 524394830, 291454491, 'timackerman', '2025-06-21', '2025-06-21', 185625, 'c3aa7a84f8230e1bef5e2fd3046441703fa72d2c494c08cedc7116caac663dc7', 'jpg'),
+    ('fresh-house_finch-15', 'house_finch', 685489568, 375002637, 'markg123', '2026-06-24', '2026-06-24', 189697, 'ad05c68fb45e846d852d76d5d1566f021c43302e3835de5fa0c12addd790efcd', 'jpg'),
+    ('fresh-american_goldfinch-00', 'american_goldfinch', 691763079, 378243747, 'nature-walk42', '2026-07-04', '2026-07-04', 122466, '92358bdc5deec2bac03f860087de3e7283ee968625b054833e2d8447b55b65d2', 'jpg'),
+    ('fresh-american_goldfinch-01', 'american_goldfinch', 558604141, 309584874, 'cnpsstevew', '2025-08-27', '2025-08-21', 61456, '7eb148d84b898bc4e07c60b0226f2a31f7b55f844311df5394e750dbd8e68ed5', 'jpg'),
+    ('fresh-american_goldfinch-02', 'american_goldfinch', 653584740, 358285286, 'pasha66', '2026-05-04', '2026-05-04', 352205, 'f7f93a066a5436b50e6bfc7107098c25002e2d48bc2f60be16480323a0bd0365', 'jpg'),
+    ('fresh-american_goldfinch-03', 'american_goldfinch', 691328306, 378016544, 'kpmcfarland', '2026-07-04', '2026-07-04', 132787, 'dbd4cd171bb4cb9db548a54663e64745b347f2c6cc01501dec8d40e42add048f', 'jpg'),
+    ('fresh-american_goldfinch-04', 'american_goldfinch', 475801942, 264939435, 'rdclark86', '2025-03-11', '2025-03-11', 57312, '4b9721d893e676f4d4bce1285db9e078eb141a287c6d071cfa251ecca943d718', 'jpeg'),
+    ('fresh-american_goldfinch-05', 'american_goldfinch', 735971248, 401008054, 'terranova2025', '2026-09-17', '2026-09-17', 320416, '774df2ddcc0588656482dbfd20fff3d23cc73381f2ae8c6b2763f4e1864943e3', 'jpg'),
+    ('fresh-american_goldfinch-06', 'american_goldfinch', 661444544, 362402781, 'bob497', '2026-05-17', '2026-05-17', 301692, 'dbf04566ff847352693f87be841c70d3de224f5b84dc19339561754030c4845e', 'jpg'),
+    ('fresh-american_goldfinch-07', 'american_goldfinch', 508680369, 283105414, 'vjnorthcutt', '2025-05-22', '2025-05-22', 162972, '66b1c04a00713a8a1bfc535c814b6f5fc3e0a63b1d271c4eb0bdaadced2829db', 'jpg'),
+    ('fresh-american_goldfinch-08', 'american_goldfinch', 504874538, 281073145, 'phillymycobeth', '2025-05-14', '2025-05-14', 131472, '4a23c1e8168693623ea460a72b42b17fff1b364ae5f0c7f160b24a84e79092e5', 'jpg'),
+    ('fresh-american_goldfinch-09', 'american_goldfinch', 712257607, 388867550, 'bt_', '2026-08-06', '2026-08-06', 143820, 'e7eb4ce59643ef374217635f038b391c4c10680c41449aa364ac3fe1bdbc5829', 'jpg'),
+    ('fresh-american_goldfinch-10', 'american_goldfinch', 717172471, 391110520, 'cazotea', '2026-08-14', '2026-08-14', 107903, '53f7b13ea0681d026ff3cd09237fcfe8c821390d54f772d2419cdc35caea4623', 'jpg'),
+    ('fresh-american_goldfinch-11', 'american_goldfinch', 506831235, 282131537, 'joshuagsmith', '2025-05-18', '2025-05-01', 49840, '4c6037bb0c253bd7331978fe82f0ec54740a2b36cb97eb8b078fa5bbf3b3ebc4', 'jpg'),
+    ('fresh-american_goldfinch-12', 'american_goldfinch', 569263984, 315136704, 'noam_chimpsky', '2025-09-19', '2025-09-19', 95812, '356ba6a713f1aae621a885a565388b477d887c9ff3888bf523f024c769030aea', 'jpg'),
+    ('fresh-american_goldfinch-13', 'american_goldfinch', 744994352, 405583541, 'deberly', '2026-10-03', '2026-10-03', 151270, '6fb48481b3e643df3115e2b974b9f3dcd0e4bd6dfa3c61f72b3e6d130ad7c8a0', 'jpg'),
+    ('fresh-american_goldfinch-14', 'american_goldfinch', 703590783, 384370748, 'anthony296', '2026-07-23', '2026-07-23', 213686, '5ee3d4f48bcbb7442836920b710861c58431fd207a8ce019111e31854bdf4fd1', 'jpg'),
+    ('fresh-american_goldfinch-15', 'american_goldfinch', 738345154, 402213356, 'dregyn', '2026-09-21', '2026-09-21', 105104, 'a85c37640cc3221717c70a1855771f0b5057561e2ffe4172a2e8507183df32dd', 'jpg'),
+)
+FRESH_TEST_CREATED_FROM = "2025-03-01"
+FRESH_TEST_SOURCE = (
+    "iNaturalist API v1, research-grade CC0 observations created 2025-03-01..2026-10-17, one photograph per observer, "
+    "no observer of the pinned 360; drawn 2026-10-18 by tools/draw_fresh_test.py (docs/siglip2-fresh-test-draw.json)"
+)
 SAMPLE_SEED = 42
 SAMPLE_SPLIT = {"train": 36, "validation": 8, "test": 16}  # per species; 6 species -> 216 / 48 / 96
 MIN_RECORDS = 8
@@ -3999,4 +4108,72 @@ def write_dataset_csv(records: Sequence[Mapping[str, Any]], path: str | Path) ->
                     "inat_observation_url": record.get("inat_observation_url", ""),
                 }
             )
+    return out
+
+
+def _manifest_digest(rows: Sequence[Sequence[Any]]) -> str:
+    return _sha256_bytes(json.dumps([list(r) for r in rows], separators=(",", ":")).encode("utf-8"))
+
+
+def pin_manifest_digest() -> str:
+    """SHA-256 of the compact JSON of `SAMPLE_RECORDS` (the 360 pins the pre-registration fixes)."""
+    return _manifest_digest(SAMPLE_RECORDS)
+
+
+def fresh_manifest_digest() -> str:
+    """SHA-256 of the compact JSON of `FRESH_TEST_RECORDS` (the fresh-test pins)."""
+    return _manifest_digest(FRESH_TEST_RECORDS)
+
+
+def fetch_fresh_test(*, cache_dir: str | Path | None = None, fetcher: Any = None) -> dict[str, bytes]:
+    """Return every fresh-test photograph (bytes keyed by record id) from the cache or the open-data bucket, each
+    refused on any byte-size or SHA-256 mismatch. Scoring them is gated by the pre-registered settings."""
+    cache = Path(cache_dir) if cache_dir is not None else DEFAULT_CACHE_DIR / "fresh"
+    cache.mkdir(parents=True, exist_ok=True)
+    out = {}
+    for rid, _label, photo_id, _obs, _user, _created, _observed, size, digest, ext in FRESH_TEST_RECORDS:
+        local = cache / f"{photo_id}.{ext}"
+        data = local.read_bytes() if local.is_file() else b""
+        if len(data) != size or _sha256_bytes(data) != digest:
+            url = photo_url(photo_id, ext)
+            if fetcher is not None:
+                data = fetcher(url)
+            else:
+                request = urllib.request.Request(
+                    url, headers={"User-Agent": "dimer-siglip2-tutorial/1.0"}
+                )
+                with urllib.request.urlopen(request, timeout=120) as response:  # noqa: S310 (pinned https URL)
+                    data = response.read()
+            if len(data) != size or _sha256_bytes(data) != digest:
+                raise ValueError(
+                    f"{rid} ({photo_id}/medium.{ext}): fetched {len(data)} bytes with sha256 "
+                    f"{_sha256_bytes(data)[:16]}…, pinned {size} / {digest[:16]}…"
+                )
+            local.write_bytes(data)
+        out[rid] = data
+    return out
+
+
+def read_fresh_test(files: Mapping[str, bytes]) -> list[dict[str, Any]]:
+    """Decode the verified fresh-test bytes into `{id, image, label}` records with their provenance."""
+    out = []
+    for rid, label, photo_id, obs_id, user, created, observed, _size, _digest, _ext in FRESH_TEST_RECORDS:
+        if rid not in files:
+            raise ValueError(f"fresh test is missing {rid}")
+        image = Image.open(io.BytesIO(files[rid]))
+        image.load()
+        out.append(
+            {
+                "id": rid,
+                "image": image.convert("RGB"),
+                "label": label,
+                "scientific_name": SPECIES[label][0],
+                "common_name": SPECIES[label][1],
+                "inat_photo_id": photo_id,
+                "inat_observation_url": observation_url(obs_id),
+                "observer": user,
+                "created_at": created,
+                "observed_on": observed,
+            }
+        )
     return out

@@ -429,6 +429,7 @@ class Siglip2Pipeline:
                 f"validation records carry labels outside the training classes: {unknown[:5]}"
             )
         model, processor = self.model, self.processor
+        self._remember_base(names)
         torch.manual_seed(seed)
         started = time.perf_counter()
         wanted = set(names)
@@ -473,7 +474,8 @@ class Siglip2Pipeline:
         history.append(entry)
         if progress:
             progress(entry)
-        best_score = entry["val"]["accuracy"] if entry["val"] else -math.inf
+        # R82 fix: select on validation text-to-image mAP, as documented (4fe3348 compared accuracy).
+        best_score = entry["val"]["t2i_map"] if entry["val"] else -math.inf
         best_state = {k: v.detach().clone() for k, v in model.state_dict().items() if k in wanted}
         initial_state = {k: v.clone() for k, v in best_state.items()}
         best_epoch = 0
@@ -508,7 +510,7 @@ class Siglip2Pipeline:
                 history.append(entry)
                 if progress:
                     progress(entry)
-                current = entry["val"]["accuracy"] if entry["val"] else math.inf
+                current = entry["val"]["t2i_map"] if entry["val"] else math.inf
                 if current > best_score or not entry["val"]:
                     best_score = current
                     best_state = {
@@ -551,6 +553,27 @@ class Siglip2Pipeline:
             "seconds": round(time.perf_counter() - started, 2),
         }
         return dict(self.adapter)
+
+    def _remember_base(self, names: Sequence[str]) -> None:
+        """Keep a CPU copy of each base tensor before any adaptation first changes it (for `restore_base`)."""
+        store = self.__dict__.setdefault("_base_tensors", {})
+        state = self.model.state_dict()
+        for name in names:
+            if name not in store:
+                store[name] = state[name].detach().to("cpu", copy=True)
+
+    def restore_base(self) -> None:
+        """Put the pinned base tensors back in place of any adaptation (in memory, exact) and drop the adapter."""
+        store = self.__dict__.get("_base_tensors", {})
+        if store:
+            state = dict(self.model.state_dict())
+            for name, value in store.items():
+                state[name] = value.to(device=state[name].device, dtype=state[name].dtype)
+            self.model.load_state_dict(state, strict=True)
+        self.model.eval()
+        for param in self.model.parameters():
+            param.requires_grad_(False)
+        self.adapter = None
 
     def save_artifact(
         self, output_dir: str | Path, metadata: Mapping[str, Any] | None = None
@@ -633,6 +656,7 @@ class Siglip2Pipeline:
                 raise ValueError(
                     f"artifact tensor {key} has shape {tuple(value.shape)}, base has {tuple(state[key].shape)}"
                 )
+        self._remember_base(list(tensors))
         merged = dict(state)
         merged.update({k: v.to(state[k].dtype) for k, v in tensors.items()})
         self.model.load_state_dict(merged, strict=True)
