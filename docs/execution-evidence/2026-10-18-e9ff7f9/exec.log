@@ -1,0 +1,80 @@
+[colab] Parsing notebook '/home/kurt/acct2/colab-runs/siglip2-vision-language-pipeline-e9ff7f9-c27e30/siglip2_vision_language_colab_e9ff7f9_colab-cli-t4.ipynb'...
+[colab] Executing cell 1/17 - Infrastructure: build (or reuse) the isolated environment and route later cells to it...
+{'isolated_environment': '/content/dimer_isolated_env_60f2af56a971', 'reused': False, 'isolated_python': '3.12.12', 'kernel_python': '3.13.15', 'locked_packages': 47, 'setup_seconds': 50}
+{'routed_to': '/content/dimer_isolated_env_60f2af56a971/bin/python', 'worker_pid': 3126, 'worker_reused': False}
+[colab] Executing cell 2/17 - Infrastructure: record the runtime...
+{'notebook_source': {'repository': 'siglip2-vision-language-pipeline', 'repository_revision': '469f55e73885d9a8e909c3b724b5378b755d26c7', 'embedded_module': 'src/siglip2_pipeline/config.py', 'embedded_modules': ['src/siglip2_pipeline/config.py', 'src/siglip2_pipeline/metrics.py', 'src/siglip2_pipeline/model.py', 'src/siglip2_pipeline/provenance.py', 'src/siglip2_pipeline/samples.py', 'src/siglip2_pipeline/pipeline.py', 'src/siglip2_pipeline/protocol.py'], 'module_sha256': '0c73c8d4d066cddde3ba11e02ea8e4c1d69ddd314667625fd69df7583dc69a64', 'generator': 'build_notebook.py/2.2', 'notebook_spec': '2.5'}, 'python': '3.12.12', 'executable': '/content/dimer_isolated_env_60f2af56a971/bin/python', 'torch': '2.14.0+cu130', 'transformers': '4.57.6', 'numpy': '2.5.3', 'cuda': True}
+[colab] Executing cell 3/17 - siglip2_vision_language-08...
+[colab] Executing cell 4/17 - siglip2_vision_language-10...
+[colab] Executing cell 5/17 - siglip2_vision_language-12...
+[colab] Executing cell 6/17 - siglip2_vision_language-14...
+[colab] Executing cell 7/17 - siglip2_vision_language-16...
+[colab] Executing cell 8/17 - siglip2_vision_language-18...
+[colab] Executing cell 9/17 - siglip2_vision_language-20...
+[colab] Executing cell 10/17 - Infrastructure: stage and digest-verify the pinned snapshot, then load the model...
+{'model_id': 'google/siglip2-base-patch16-224', 'revision': '5ffaac51d5e2f3367f7dab0cad4be4cb07c0caa2', 'license': 'Apache-2.0', 'files': 8, 'total_bytes': 1539456760}
+{'weights_dir': '/content/weights/siglip2-base-patch16-224', 'fetched': ['README.md', 'config.json', 'model.safetensors', 'preprocessor_config.json', 'special_tokens_map.json', 'tokenizer.json', 'tokenizer.model', 'tokenizer_config.json']}
+{'verified_files': 8, 'revision': '5ffaac51d5e2f3367f7dab0cad4be4cb07c0caa2'}
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+{'device': device(type='cuda'), 'source': 'local-snapshot'}
+[colab] Executing cell 11/17 - siglip2_vision_language-24...
+{'data_source': "iNaturalist CC0 bird photographs (six species): iNaturalist open-data bucket, research-grade CC0 photos selected 2026-09-19 (60 per species) (CC0 1.0 (each photo's own license_code on iNaturalist; observers credited in the records))", 'raw_rows': {'photographs': 360, 'bytes': 39223447, 'observers': 222, 'fresh_test': {'photographs': 96, 'bytes': 15015075, 'observers': 96, 'observers_shared_with_the_360': 0, 'manifest_sha256': '019d38f4026011ee...'}}, 'sets': {'train': 216, 'validation': 48, 'test': 96, 'fresh_test': 96}, 'test_role': 'exposed development test', 'observer_overlap': {'observers': 222, 'in_more_than_one_split': 53}, 'classes': ['american_goldfinch', 'chipping_sparrow', 'dark_eyed_junco', 'house_finch', 'song_sparrow', 'white_throated_sparrow']}
+{'train': {'n': 216, 'label_counts': {'american_goldfinch': 36, 'chipping_sparrow': 36, 'dark_eyed_junco': 36, 'house_finch': 36, 'song_sparrow': 36, 'white_throated_sparrow': 36}, 'image_side': {'min': 342, 'max': 500}, 'digest': 'fa4ce9eb2a674c17...'}}
+{'validation': {'n': 48, 'label_counts': {'american_goldfinch': 8, 'chipping_sparrow': 8, 'dark_eyed_junco': 8, 'house_finch': 8, 'song_sparrow': 8, 'white_throated_sparrow': 8}, 'image_side': {'min': 357, 'max': 500}, 'digest': '481b39b7ed4d165e...'}}
+{'test': {'n': 96, 'label_counts': {'american_goldfinch': 16, 'chipping_sparrow': 16, 'dark_eyed_junco': 16, 'house_finch': 16, 'song_sparrow': 16, 'white_throated_sparrow': 16}, 'image_side': {'min': 408, 'max': 500}, 'digest': '923b58c6f32d7b4d...'}}
+{'fresh_test': {'n': 96, 'label_counts': {'american_goldfinch': 16, 'chipping_sparrow': 16, 'dark_eyed_junco': 16, 'house_finch': 16, 'song_sparrow': 16, 'white_throated_sparrow': 16}, 'image_side': {'min': 255, 'max': 500}, 'digest': '9b37c0091cc72099...'}}
+{'example': {'id': 'train-000', 'label': 'house_finch', 'display_name': 'House Finch', 'size': [375, 500], 'observation': 'https://www.inaturalist.org/observations/12337763'}}
+{'probe': 'duplicate id', 'rejected': "duplicate id 'same'"}
+{'probe': 'image over the side ceiling', 'rejected': 'records[0]: image side outside 1..MAX_IMAGE_SIDE=4096 px: (4097, 8)'}
+{'probe': 'one label only', 'rejected': '1 distinct labels; 2..100 are required'}
+{'probe': 'too small', 'rejected': '3 records; 8..20000 are required'}
+[colab] Executing cell 12/17 - siglip2_vision_language-27...
+{'ceilings': {'TEXT_MAX_LENGTH': 64, 'DEFAULT_PROMPT_TEMPLATE': 'This is a photo of {label}.', 'MAX_IMAGE_SIDE': 4096, 'MIN_RECORDS': 8, 'MAX_RECORDS': 20000, 'MIN_CLASSES': 2, 'image_contract': '224x224 RGB after processor resize', 'device': 'cuda'}}
+{'shapes': ['red_square.ppm', 'green_circle.ppm', 'blue_triangle.ppm'], 'sha256': {'red_square.ppm': 'b38ff0c9131677ed...', 'green_circle.ppm': '2e3e657686a0f6a6...', 'blue_triangle.ppm': 'f0f4c38c7af92b3a...'}, 'manifest_verdict': 'accepted', 'findings': 1}
+red_square.ppm -> [('red square', 0.5807), ('abstract geometric shape', 0.0008), ('blue triangle', 0.0), ('green circle', 0.0)]
+green_circle.ppm -> [('green circle', 0.8511), ('abstract geometric shape', 0.0069), ('red square', 0.0004), ('blue triangle', 0.0001)]
+blue_triangle.ppm -> [('blue triangle', 0.9154), ('abstract geometric shape', 0.0125), ('red square', 0.0018), ('green circle', 0.0)]
+{'checks': {'one_ranking_per_image': True, 'scores_in_unit_interval': True, 'rankings_descending': True, 'embeddings_unit_norm': True}, 'seconds': 1.35, 'frozen_scene': {'top1_accuracy': 1.0, 'recall_at_1': 1.0}, 'verdict': 'sample-sanity'}
+[colab] Executing cell 13/17 - siglip2_vision_language-30...
+{'set': 'exposed development test', 'majority_baseline': {'accuracy': 0.167, 'macro_f1': 0.048, 't2i_map': 0.203}, 'n': 96, 'note': "majority floor ('american_goldfinch' for every photograph)"}
+{'colour_neighbour_baseline': {'accuracy': 0.26, 'macro_f1': 0.261, 't2i_map': 0.212}, 'note': 'colour nearest neighbour (216 training photographs)'}
+{'frozen_model': {'accuracy': 0.76, 'macro_f1': 0.758, 't2i_map': 0.723}, 'n': 96, 'verdict': 'measured', 'prompt_template': 'This is a photo of {label}.', 'seconds': 1.7}
+{'definitions': {'accuracy': 'fraction of photographs whose highest-scoring class prompt is the gold label; in 0..1', 'macro_f1': 'unweighted mean over classes of the F1 of predicting that class; in 0..1', 't2i_map': "mean over class prompts of the average precision of ranking every photograph by the prompt's score (the class's own photographs are relevant); in 0..1"}}
+{'by_species_frozen': {'american_goldfinch': {'n': 16, 'recall': 0.88, 'ap': 0.93}, 'chipping_sparrow': {'n': 16, 'recall': 0.75, 'ap': 0.71}, 'dark_eyed_junco': {'n': 16, 'recall': 0.94, 'ap': 0.97}, 'house_finch': {'n': 16, 'recall': 0.75, 'ap': 0.86}, 'song_sparrow': {'n': 16, 'recall': 0.81, 'ap': 0.51}, 'white_throated_sparrow': {'n': 16, 'recall': 0.44, 'ap': 0.35}}}
+{'frozen_model_scientific_name_prompts': {'accuracy': 0.479, 'macro_f1': 0.459, 't2i_map': 0.467}}
+{'frozen_vs_baselines': 'above the baselines', 'frozen': {'t2i_map': 0.723, 'accuracy': 0.76}, 'majority_t2i_map': 0.203, 'neighbour_accuracy': 0.26}
+[colab] Executing cell 14/17 - siglip2_vision_language-33...
+{'C0': {'config': {'trainable_vision_layers': 2, 'lr': 5e-05}, 'best_epoch': 4, 'best_val_t2i_map': 0.8758, 'val_t2i_map_by_epoch': [0.68, 0.874, 0.854, 0.863, 0.876, 0.872, 0.854], 'seconds': 35.6}}
+{'C1': {'config': {'trainable_vision_layers': 4, 'lr': 5e-05}, 'best_epoch': 5, 'best_val_t2i_map': 0.8767, 'val_t2i_map_by_epoch': [0.68, 0.873, 0.871, 0.87, 0.865, 0.877, 0.849], 'seconds': 39.6}}
+{'C2': {'config': {'trainable_vision_layers': 2, 'lr': 1e-05}, 'best_epoch': 4, 'best_val_t2i_map': 0.8667, 'val_t2i_map_by_epoch': [0.68, 0.811, 0.841, 0.848, 0.867, 0.86, 0.853], 'seconds': 36.0}}
+{'grid_selection': {'selected': 'C0', 'config': {'trainable_vision_layers': 2, 'lr': 5e-05}, 'adaptation_kept': True, 'reason': 'no challenger beat C0 by 0.02', 'scores': {'C0': 0.8758, 'C1': 0.8767, 'C2': 0.8667}, 'frozen_val_map': 0.6798, 'margin': 0.02}, 'seconds': 111.3}
+[colab] Executing cell 15/17 - siglip2_vision_language-36...
+{'config': 'grid selection', 'lr': 5e-05, 'trainable_vision_layers': 2, 'epochs': 6, 'batch_size': 16, 'seed': 0}
+{'epoch': 0, 'train_loss': None, 'val_accuracy': 0.646, 'val_macro_f1': 0.654, 'val_t2i_map': 0.68, 'note': 'frozen model'}
+{'epoch': 1, 'train_loss': 1.7524, 'val_accuracy': 0.812, 'val_macro_f1': 0.809, 'val_t2i_map': 0.874}
+{'epoch': 2, 'train_loss': 0.8739, 'val_accuracy': 0.792, 'val_macro_f1': 0.785, 'val_t2i_map': 0.854}
+{'epoch': 3, 'train_loss': 0.4247, 'val_accuracy': 0.833, 'val_macro_f1': 0.831, 'val_t2i_map': 0.863}
+{'epoch': 4, 'train_loss': 0.147, 'val_accuracy': 0.854, 'val_macro_f1': 0.854, 'val_t2i_map': 0.876}
+{'epoch': 5, 'train_loss': 0.0501, 'val_accuracy': 0.812, 'val_macro_f1': 0.814, 'val_t2i_map': 0.872}
+{'epoch': 6, 'train_loss': 0.0548, 'val_accuracy': 0.75, 'val_macro_f1': 0.757, 'val_t2i_map': 0.854}
+{'trainable_parameters': 21264384, 'total_parameters': 375187970, 'classes': ['american_goldfinch', 'chipping_sparrow', 'dark_eyed_junco', 'house_finch', 'song_sparrow', 'white_throated_sparrow'], 'best_epoch': 4, 'selection': 'highest validation text-to-image mAP', 'seconds': 34.7}
+[colab] Executing cell 16/17 - siglip2_vision_language-39...
+{'preregistered': True, 'test_look': 'reproduction of the pre-registered evaluation', 'settings_differing': [], 'adaptation_kept': True}
+{'validation': {'accuracy': 0.854, 'macro_f1': 0.854, 't2i_map': 0.876}, 'n': 48, 'note': 'the configuration and the epoch were chosen on these photographs, so these numbers are biased upward'}
+{'development_view': {'label': 'exposed development test', 'n': 96, 'note': 'reported in every run for continuity with earlier records; informs no decision', 'accuracy': {'majority': 0.167, 'neighbour': 0.26, 'frozen': 0.76, 'adapted': 0.792}, 'macro_f1': {'majority': 0.048, 'neighbour': 0.261, 'frozen': 0.758, 'adapted': 0.793}, 't2i_map': {'majority': 0.203, 'neighbour': 0.212, 'frozen': 0.723, 'adapted': 0.871}, 'verdict': {'frozen_vs_baselines': 'above the baselines', 'adapted_vs_frozen_t2i_map': 'improved', 'adapted_vs_frozen_accuracy': 'improved'}}}
+{'fresh_test': {'n': 96, 'accuracy': {'majority': 0.167, 'neighbour': 0.208, 'frozen': 0.552, 'adapted': 0.677}, 'macro_f1': {'majority': 0.048, 'neighbour': 0.21, 'frozen': 0.543, 'adapted': 0.68}, 't2i_map': {'majority': 0.312, 'neighbour': 0.245, 'frozen': 0.628, 'adapted': 0.771}, 'verdict': {'frozen_vs_baselines': 'above the baselines', 'adapted_vs_frozen_t2i_map': 'improved', 'adapted_vs_frozen_accuracy': 'improved'}}}
+{'scientific_name_prompts': {'accuracy': {'frozen': 0.396, 'adapted': 0.458}, 'macro_f1': {'frozen': 0.35, 'adapted': 0.415}, 't2i_map': {'frozen': 0.4, 'adapted': 0.399}}}
+{'delta_vs_frozen': {'accuracy': 0.125, 'macro_f1': 0.137, 't2i_map': 0.143}}
+{'ap_fell': []}
+{'recall_fell': ['chipping_sparrow', 'song_sparrow']}
+{'by_species': {'american_goldfinch': {'n': 16, 'frozen_recall': 0.69, 'adapted_recall': 0.69, 'frozen_ap': 0.79, 'adapted_ap': 0.89}, 'chipping_sparrow': {'n': 16, 'frozen_recall': 0.62, 'adapted_recall': 0.5, 'frozen_ap': 0.49, 'adapted_ap': 0.58}, 'dark_eyed_junco': {'n': 16, 'frozen_recall': 0.56, 'adapted_recall': 0.81, 'frozen_ap': 0.78, 'adapted_ap': 0.8}, 'house_finch': {'n': 16, 'frozen_recall': 0.56, 'adapted_recall': 0.62, 'frozen_ap': 0.65, 'adapted_ap': 0.71}, 'song_sparrow': {'n': 16, 'frozen_recall': 0.75, 'adapted_recall': 0.69, 'frozen_ap': 0.56, 'adapted_ap': 0.75}, 'white_throated_sparrow': {'n': 16, 'frozen_recall': 0.12, 'adapted_recall': 0.75, 'frozen_ap': 0.49, 'adapted_ap': 0.89}}}
+{'report': 'outputs/siglip2_vision_language_evaluation_report.json', 'test_look': 'reproduction of the pre-registered evaluation'}
+[colab] Executing cell 17/17 - siglip2_vision_language-42...
+{'image': 'red_square.ppm', 'frozen': [('red square', 0.581), ('abstract geometric shape', 0.001)], 'adapted': [('red square', 0.678), ('abstract geometric shape', 0.0)]}
+{'image': 'green_circle.ppm', 'frozen': [('green circle', 0.851), ('abstract geometric shape', 0.007)], 'adapted': [('green circle', 0.918), ('abstract geometric shape', 0.008)]}
+{'image': 'blue_triangle.ppm', 'frozen': [('blue triangle', 0.915), ('abstract geometric shape', 0.012)], 'adapted': [('blue triangle', 0.968), ('abstract geometric shape', 0.013)]}
+{'scene_after_adaptation': {'top1_accuracy': 1.0, 'recall_at_1': 1.0}, 'verdict': 'sample-sanity'}
+{'artifact': 'outputs/siglip2_vision_language_adapter', 'format': 'org.valcorza.siglip2-base-patch16-224.adapter.v1', 'tensors': 45, 'bytes': 85062712, 'sha256': 'ed193b78c52553d2...'}
+{'reload_parity': {'max_abs_difference': 0.0, 'identical_rows': 8, 'of': 8}, 'reloaded_best_epoch': 4}
+['provenance.json', 'sample-data', 'siglip2_vision_language_adapter', 'siglip2_vision_language_evaluation_report.json', 'siglip2_vision_language_grid.json', 'siglip2_vision_language_input_manifest.json', 'siglip2_vision_language_result.json', 'siglip2_vision_language_shapes.json', 'siglip2_vision_language_train.csv']
+[colab] Saving notebook with outputs to '/home/kurt/acct2/colab-runs/siglip2-vision-language-pipeline-e9ff7f9-c27e30/siglip2_vision_language_colab_e9ff7f9_colab-cli-t4_output.ipynb'...

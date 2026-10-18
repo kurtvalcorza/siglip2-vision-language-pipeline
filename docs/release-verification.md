@@ -157,10 +157,13 @@ stated runtime, not general estimates.
 | 2026-10-09 (14:20:50 UTC start) | commit `20ffef4` / blob `b3ae91fdb393` (`metadata.dimer.generated_from.revision` `0979f22`, the generation-time HEAD; `0979f22..20ffef4` is the ModuleSpec/spec-2.2 commit itself; generator `build_notebook.py/2.2`, `notebook_spec` 2.2) | Colab CLI 0.7.4 sequential execution (`colab exec -f`), fresh Colab Tesla T4, session `suite-siglip2-20ffef4-c27e`; isolated hash-locked uv environment, nothing installed into the kernel | Default sample path, one pass, no restart: 15/15 code cells, 0 errors (6 carried-module cells print nothing); snapshot 8 files / 1,539,456,760 B digest-verified; 360 photographs, split 216 / 48 / 96, observer overlap 53 of 222; shapes top-1 1.0 / recall@1 1.0 (`sample-sanity`); majority 0.167, colour neighbour 0.26, frozen accuracy 0.76 / macro F1 0.758 / mAP 0.723 (scientific-name prompts 0.479 / 0.459 / 0.467); validation mAP 0.68 → 0.874 → 0.854 → 0.863 → 0.876 → 0.872 …, epoch 4 kept; delta vs frozen accuracy +0.031, macro F1 +0.034, mAP +0.148 (scientific-name 0.51 / 0.453 / 0.492); White-throated Sparrow recall 0.44 → 0.75, Chipping Sparrow 0.75 → 0.62; adapter 45 tensors / 85,062,712 B; reload parity 8/8, max abs difference 0.0 | 377.5 s | **PASSED** — one pass; executed notebook SHA-256 `057015ead8bf67e4…`; optional journeys (BYOD, REL12 refusals in a hosted run) not exercised; status stays **Candidate** (REL14); earlier blob `b3ae91fd`, history since the 2026-10-18 evaluation of record |
 | 2026-10-15 (00:43:58 UTC start) | `a3ec1e4` / blob `641d29c139cc` (supplemental `DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb`, revision 0.4.0-candidate) | Colab CLI 0.7.4, fresh Colab Tesla T4, session `suite-siglip2-a3ec1e4-4627`; CLI sequential execution, not a browser Run all | Default `STANDARD` path; forms/uploads not exercised; 37/37 code cells, 0 errors; test gallery 389 / 1,729; coarse R@1 I2T / T2I SigLIP 2 0.789 / 0.721, SigLIP v1 0.781 / 0.716, BLIP ITC 0.740 / 0.652, Flickr30k sensitivity 0.671 / 0.606; index reload parity PASS | 563.0 s | **PASSED** — executed notebook SHA-256 `6501fb697d3e…` in `docs/execution-evidence/2026-10-15/DIMER_MultiModel_Vision_Language_Retrieval_Workshop_a3ec1e4_colab-cli-t4.ipynb`; status stays **Candidate** |
 | 2026-10-18 (00:06:32 UTC start) | `6df20c7` / blob `1f274277e528` (`metadata.dimer.generated_from.revision` `188c43c`; generator `build_notebook.py/2.2`, `notebook_spec` 2.5, `module_sha256` `897cfd4e32c7`) | Colab CLI 0.7.4 sequential execution (`colab exec -f`), fresh Colab Tesla T4, session `suite-siglip2-6df20c7-c27e`; isolated hash-locked uv environment (56 s) | Default pre-registered path (grid on, `CONFIG = 'grid selection'`, fresh test fetched and not masked); forms/uploads not exercised; 17/17 code cells, 0 errors; grid C0 0.8758 / C1 0.8767 / C2 0.8667, frozen 0.6798, C0 kept (103.1 s); 7b epoch 4 (31.7 s); exposed development test unchanged (0.76 → 0.792 / 0.758 → 0.793 / 0.723 → 0.871); fresh test (96) accuracy frozen 0.552 → adapted 0.677, macro F1 0.543 → 0.68, t2i mAP 0.628 → 0.771 (majority 0.167 / 0.048 / 0.312, colour neighbour 0.208 / 0.21 / 0.245); reload parity 8/8 | 895.7 s | **PASSED** — REL13: **pre-registered evaluation of record** (first hosted run of the pre-registered settings; first fresh-test scoring by any run); executed notebook SHA-256 `5774248174fd…` in `docs/execution-evidence/2026-10-18-6df20c7/`; status stays **Candidate** |
+| 2026-10-18 (00:49:35 UTC start) | `e9ff7f9` / blob `3f173c9c4456` | Colab CLI 0.7.4 `colab exec -f`, fresh Colab Tesla T4, session `suite-siglip2-e9ff7f9-c27e` | Default sample path, one pass: 17/17 code cells, 0 errors; `test_look` = `reproduction of the pre-registered evaluation`, `settings_differing` = []; grid C0 0.8758 / C1 0.8767 / C2 0.8667, C0 kept, epoch 4; fresh test identical to the record (accuracy 0.552 → 0.677, macro F1 0.543 → 0.68, mAP 0.628 → 0.771; scientific-name 0.396 → 0.458 / 0.35 → 0.415 / 0.4 → 0.399); exposed development test identical; reload parity 8/8 | 393.3 s | **PASSED** — reproduction of the pre-registered evaluation (SCORE_ONCE_RULE item 3); executed notebook SHA-256 `7c5807697d0d2cd1…`; adapter bytes differ from the record (`ed193b78…` vs `ec27138c…`, GPU non-determinism) while every printed metric is equal |
 
 ## Current status
 
 **Candidate** (2026-10-18). **Pre-registered evaluation of record (2026-10-18).** The row 82 revision, commit `6df20c7` / blob `1f274277` (generator `build_notebook.py/2.2`, `notebook_spec` 2.5, embedded revision `188c43c`) executed on a fresh Colab Tesla T4 (Colab CLI 0.7.4 sequential execution, not a browser `Run all`; 17/17 code cells, 0 errors, 895.7 s) under the pre-registered settings (`preregistered: True`, `settings_differing: []`); the grid kept C0, epoch 4; fresh test (96) accuracy frozen 0.552 → adapted 0.677, macro F1 0.543 → 0.68, t2i mAP 0.628 → 0.771 (majority 0.167 / 0.048 / 0.312, colour neighbour 0.208 / 0.21 / 0.245). Evidence in `docs/execution-evidence/2026-10-18-6df20c7/`; see the row 82 record section below. Forms, BYOD and uploads were not exercised, so the status stays **Candidate**. Earlier, history: **Candidate** (2026-10-09). **Colab T4 one-pass run of the isolated-environment revision (2026-10-09).** Commit `20ffef4` / blob `b3ae91fdb393` (generator `build_notebook.py/2.2`, `notebook_spec` 2.2, worker `google.colab` stubs with a `ModuleSpec`) executed in one pass with no restart and 0 errors on a fresh Colab Tesla T4 (Colab CLI 0.7.4 sequential execution, not a browser `Run all`; 15/15 code cells, 377.5 s, `cuda`); evidence in `docs/execution-evidence/2026-10-09-20ffef4/`. The 2026-09-20 Kaggle T4 run of blob `15f946ab` (14/14 ok, one restart after the install cell) is history: the notebook now builds a hash-locked isolated uv environment (generator /2.2, no restart) and declares NOTEBOOK_SPEC 2.2, so its blob changed and the status is **Candidate** (REL14) until a clean run of the new blob is recorded in `docs/release-verification.md`. Previously: the `E2E` notebook blob `15f946ab` (committed at `f3dd43e`) executed top-to-bottom in a clean Kaggle Tesla T4 runtime on 2026-09-20 (14/14 ok (1 restart after install cell), 423.7 s, 378 files, 1579 MB fetched from the Hub and digest-verified inside the notebook) with no repository checkout — the REL1/REL10 supported-runtime evidence this file gates on. The local pre-flight rows above are what preceded it and remain history. Any later change to the carried modules or to the notebook produces a new blob, and the registry returns to **Candidate** until a clean run of that blob is recorded here.
+
+**Reading the record (peer review, 2026-10-18).** On the fresh test the gain is concentrated in one species: the White-throated Sparrow, which the frozen common-name prompt got wrong, went from 2 to 12 of 16 correct, while the other five species netted +2 of 80 (American Goldfinch 0, Chipping Sparrow −2, Dark-eyed Junco +4, House Finch +1, Song Sparrow −1), changes of one to four photographs that 16 per species cannot tell from noise. No primary endpoint or success criterion was pre-registered: accuracy moved from 53 to 65 of 96, and the unpaired 95 % Clopper–Pearson intervals overlap (frozen [0.447, 0.654], adapted [0.574, 0.769]), so the record shows a point improvement that n = 96 cannot establish. The recorded majority-floor mAP 0.312 is a tie-order artefact — the fresh records are grouped by species and the old metric ranked tied scores in record order — and is about 0.203 order-free, so it does not beat the colour neighbour (0.245); later runs print the corrected floor. The frozen model scored 0.552 on the fresh test against 0.76 on the exposed development test, a gap larger than the adaptation effect; two plausible, untested contributors are different photographers (excluding the 360's 222 observers removed 65–88 % of every species' pool) and the date cutoff against pretraining exposure (74 of the 96 exposed photographs predate SigLIP 2's release); the record cannot separate them.
 
 Requote (2026-10-18, after the record): code commits `449edfc`, `29479b1` and `469f55e`, regeneration commit
 `8994f49`, blob `3f173c9c` (stamp `469f55e`). It changes the worked answers and run times, which now quote the record
@@ -168,15 +171,7 @@ above with its commit and blob (REL13), and sets `RECORDED_EVALUATION`, so a lat
 `reproduction of the pre-registered evaluation`. No model was run and nothing was scored for it. Blob `3f173c9c` has no
 execution evidence of its own yet (REL14).
 
-Facts a reviewer should still weigh: the frozen model is already a usable zero-shot classifier on the six species
-(accuracy 0.76 in the build record), so the adaptation gain is concentrated on the retrieval view (text-to-image mAP
-0.72 → 0.87) and on the worst-separated species (White-throated Sparrow recall 0.44 → 0.75) while top-1 accuracy moves
-by three photographs of 96 (0.760 → 0.792); the 48-photograph validation split moves accuracy in 2 % steps, which is
-why the epoch is selected on mAP; the build notes say that on an earlier 48-photograph test split the same recipe moved
-accuracy by +2 to +12 points across epochs, and the vision-only trainable scope was kept because it gained on that split
-(no record survives; see the row 82 section below); the scientific-name prompt set
-is scored so a reviewer can see how much of the number is the prompt's; and the drawn shapes re-scored after
-adaptation are three images of evidence about behaviour outside the corpus, not a measurement.
+Facts a reviewer should still weigh (rewritten 2026-10-18 around the evaluation of record, peer review m6): On the fresh test the gain is concentrated in one species: the White-throated Sparrow, which the frozen common-name prompt got wrong, went from 2 to 12 of 16 correct, while the other five species netted +2 of 80 (American Goldfinch 0, Chipping Sparrow −2, Dark-eyed Junco +4, House Finch +1, Song Sparrow −1), changes of one to four photographs that 16 per species cannot tell from noise. No primary endpoint or success criterion was pre-registered: accuracy moved from 53 to 65 of 96, and the unpaired 95 % Clopper–Pearson intervals overlap (frozen [0.447, 0.654], adapted [0.574, 0.769]), so the record shows a point improvement that n = 96 cannot establish. The recorded majority-floor mAP 0.312 is a tie-order artefact — the fresh records are grouped by species and the old metric ranked tied scores in record order — and is about 0.203 order-free, so it does not beat the colour neighbour (0.245); later runs print the corrected floor. The frozen model scored 0.552 on the fresh test against 0.76 on the exposed development test, a gap larger than the adaptation effect; two plausible, untested contributors are different photographers (excluding the 360's 222 observers removed 65–88 % of every species' pool) and the date cutoff against pretraining exposure (74 of the 96 exposed photographs predate SigLIP 2's release); the record cannot separate them. The configuration and the epoch were chosen on 48 validation photographs, so validation numbers are biased upward; the keep-frozen rule compares a best-of-seven-epochs validation score with the single epoch-0 value (only the 0.02 margin guards against that); the scientific-name prompts did not carry the retrieval gain (mAP 0.4 → 0.399); and the drawn shapes re-scored after adaptation are three images of evidence about behaviour outside the corpus, not a measurement.
 
 
 ## Shared retrieval supplemental remediation evidence — 2026-09-26
@@ -342,7 +337,7 @@ Applies only to `DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb`: not
   | scientific-name macro F1 | | | 0.35 | 0.415 | |
   | scientific-name t2i mAP | | | 0.4 | 0.399 | |
 
-  - Verdicts: frozen above the baselines; adapted vs frozen `improved` on mAP and on accuracy. `ap_fell` = [];
+  - Verdicts: frozen above the baselines; adapted vs frozen `improved` on mAP and on accuracy, as printed. Note (2026-10-18, peer review M2): `improved` was a zero-threshold label; no success criterion was pre-registered, and later runs print `point gain (no pre-registered criterion)`. `ap_fell` = [];
     `recall_fell` = [chipping_sparrow (0.62 → 0.5), song_sparrow (0.75 → 0.69)].
   - Per species, recall frozen → adapted (AP): American Goldfinch 0.69 → 0.69 (0.79 → 0.89), Chipping Sparrow
     0.62 → 0.5 (0.49 → 0.58), Dark-eyed Junco 0.56 → 0.81 (0.78 → 0.8), House Finch 0.56 → 0.62 (0.65 → 0.71), Song
@@ -358,7 +353,11 @@ Applies only to `DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb`: not
   - mAP as the mean of the six rounded APs: 0.627 (printed 0.628) and 0.770 (printed 0.771); the gaps are rounding.
   - Majority macro F1: 2·(1/6)/(1 + 1/6) / 6 = 0.048.
   - The majority mAP differs between the two test sets (0.312 vs 0.203) because its constant scores are ranked by a
-    stable sort (`metrics.average_precision`), so ties follow record order.
+    stable sort (`metrics.average_precision`), so ties follow record order. The fresh records are grouped by species, so the
+    recorded 0.312 is a tie-order artefact, not a baseline that beats the colour neighbour; order-free it is about 0.203
+    (peer review M3). The recorded number stays as printed; `83b46c1` makes AP tie-aware and later runs print the
+    corrected floor. The frozen and adapted scores are continuous logits, so the correction leaves them unchanged (checked
+    in the round-2 CPU record below).
   - Exposed frozen: 73 / 96 = 0.760; mAP 0.722 from rounded APs (printed 0.723).
   - Grid rule and keep-frozen rule re-applied by hand, as above.
 - **Exposed development test (96; continuity only):** majority 0.167 / 0.048 / 0.203, neighbour 0.26 / 0.261 / 0.212,
@@ -379,3 +378,66 @@ Applies only to `DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb`: not
     was masked; here they are fresh-test rows, so they are not compared.
 - **CI:** the only CI run at `6df20c7` (39081093158) ran `unit` (success); `integration` was skipped. Its log has no
   fresh-test line. Earlier CI runs predate the fresh-test pins.
+
+## Row 82 round 2 — peer review of PR #19 (2026-10-18)
+
+Nothing below changes a pre-registered setting or re-draws the fresh test. The evaluation of record stays the
+`6df20c7` run; every Major of the review is a disclosure.
+
+- **Reproduction recorded (m12).** `e9ff7f9` (blob `3f173c9c`) ran on a fresh Colab T4 on 2026-10-18 and labelled itself
+  `reproduction of the pre-registered evaluation`. Its fresh-test and exposed-test numbers equal the record. Evidence in
+  `docs/execution-evidence/2026-10-18-e9ff7f9/`:
+  - `siglip2_vision_language_colab_e9ff7f9_colab-cli-t4_output.ipynb`: `7c5807697d0d2cd121846a0649a7d671d1d63ab84d6a45d5006d6568cbaa4993`
+  - `exec.log`: `a90e49529694396374e0676d155a40686bcbfcec6af3aadf7908e37dd875193d`
+  - `run_summary.json`: `e913cd98a74a0e34bf444e9788d099d429e2a40314a62974fb9dc0cf8433fb70`
+- **Disclosures (M1, M2, M4, m9, m10).** On the fresh test the gain is concentrated in one species: the White-throated Sparrow, which the frozen common-name prompt got wrong, went from 2 to 12 of 16 correct, while the other five species netted +2 of 80 (American Goldfinch 0, Chipping Sparrow −2, Dark-eyed Junco +4, House Finch +1, Song Sparrow −1), changes of one to four photographs that 16 per species cannot tell from noise. No primary endpoint or success criterion was pre-registered: accuracy moved from 53 to 65 of 96, and the unpaired 95 % Clopper–Pearson intervals overlap (frozen [0.447, 0.654], adapted [0.574, 0.769]), so the record shows a point improvement that n = 96 cannot establish. The recorded majority-floor mAP 0.312 is a tie-order artefact — the fresh records are grouped by species and the old metric ranked tied scores in record order — and is about 0.203 order-free, so it does not beat the colour neighbour (0.245); later runs print the corrected floor. The frozen model scored 0.552 on the fresh test against 0.76 on the exposed development test, a gap larger than the adaptation effect; two plausible, untested contributors are different photographers (excluding the 360's 222 observers removed 65–88 % of every species' pool) and the date cutoff against pretraining exposure (74 of the 96 exposed photographs predate SigLIP 2's release); the record cannot separate them.
+- **Tie-order artefact (M3).** See the record's majority-mAP note above. Code from `83b46c1` gives tied scores the
+  expected AP over every tie order.
+- **Code (m1–m4, m13, s1, s3).** All of these apply from `83b46c1` and do not alter the record:
+  - **m1:** the report is written atomically, and an empty or corrupt earlier report no longer breaks a run.
+  - **m2:** under keep-frozen the adapter is neither restored nor exported.
+  - **m3:** a reproduction prints `matches record` / `differs from record` against the numbers carried in
+    `RECORDED_EVALUATION`.
+  - **m4:** the pre-registered check now also covers the model id and revision (the values the record used). Device,
+    dtype and library versions are recorded but not checked.
+  - **m13:** the grid and training files are run-numbered.
+  - **s1:** the mask accepts only `1`, `0` or unset.
+  - **s3:** the per-image fresh-test predictions are saved, with an exact McNemar test and a paired bootstrap CI labelled
+    "post-hoc analysis, not pre-registered; added 2026-10-18 after the record", display-only. The record saved no
+    per-image rows, so the next identical hosted run (a reproduction, rule item 3) supplies the paired data.
+- **Pre-registration edited in place (m5).** `449edfc` edited `docs/siglip2-preregistration.md` §5 in place: it replaced
+  "Until then `RECORDED_EVALUATION = None`" with a pointer to the `6df20c7` record and the reproduction label. This was
+  a status pointer, not a setting. The file is restored to its `1b5f790` text, and the pointer now lives in
+  `docs/siglip2-preregistration-addendum-2026-10-18.md`.
+- **Draw deviations (m7, m8).** None of these changed the drawn set (0 hash hits, 0 place/day exclusions):
+  - The visual check of confirmed near-duplicate pairs is not implemented. There were no hits to check.
+  - Photograph downloads were paced 0.2 s apart; API calls were paced at 1.1 s, against the pre-registered 1 s minimum
+    for both.
+  - The same-place screen uses public coordinates, which obscured observations blur.
+  - The log has no draw timestamp or API snapshot id.
+  - `fresh-song_sparrow-09` was observed on 2018-05-28 and uploaded on 2026-06-08. 35 of the 96 have `observed_on`
+    different from their upload date, and 1 was taken before the SigLIP 2 release.
+  - The observer exclusion removed 65–88 % of every species' pool (1496/1862, 557/772, 883/1007, 1425/1894, 1624/2081,
+    667/1020).
+- **Spent for decisions (s2).** The fresh test is now spent for decisions. Any change to the recipe, grid or prompts
+  needs a new draw that also excludes these 96 photographs' observers.
+- **Not done:**
+  - **s4:** a digest check of the tensors that `restore_base` puts back. `restore_base` copies the remembered base
+    exactly, and the round-2 CPU record re-reads the frozen numbers unchanged after the grid.
+  - **s5:** the failing `integration` job on main pushes is out of scope for this PR.
+
+### Round-2 CPU check, fresh test masked (2026-10-18; not a hosted run)
+
+- **What ran:** `tools/run_notebook.py` on the notebook generated at `83b46c1` (the round-2 code commit), workstation
+  CPU, float32, `DIMER_NOTEBOOK_CI_PREINSTALLED=1`, `HF_HUB_OFFLINE=1`, **`DIMER_FRESH_TEST_MASK=1`**. 1,219 s, exit 0.
+  The workstation was shared with another job, so wall times are not comparable.
+- **Score-once:** `preregistered: False`, `test_look: not scored (exploratory)`, `settings_differing:
+  ['fresh_manifest_sha256', 'fresh_test_masked']`. The fresh test was neither fetched nor scored, so there was no look.
+  Files carry `_exploratory_1`.
+- **Corrected chance floor (tie-aware AP):** majority mAP on the exposed development test **0.203**. The old metric also
+  gave 0.203 on this randomly ordered split.
+- **Unchanged by the tie-aware AP:** frozen 0.76 / 0.758 / 0.723 and adapted 0.792 / 0.793 / 0.871, so the model scores
+  have no ties. Colour neighbour 0.26 / 0.261 / 0.212.
+- **Grid:** C0 0.8758, C1 0.8763, C2 0.8667, frozen 0.6798; C0 kept; 7b epoch 4.
+- **New verdict labels:** `point gain (no pre-registered criterion)`, `criterion: none pre-registered`.
+- **Other outputs:** reload parity 8/8 (maximum absolute difference 0.0).

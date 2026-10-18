@@ -213,7 +213,7 @@ def test_swp_g_checkpoint_answers_quote_the_recorded_runs():
     fresh = ("0.552", "0.677", "0.543", "0.68", "0.628", "0.771", "chipping_sparrow", "song_sparrow")
     for number in fresh:
         assert number in record, number
-    assert all(n in checks[5] for n in ("0.552", "0.677", "0.543", "0.68", "0.628", "0.771", "n = 96", "No interval", "Chipping Sparrow", "Song Sparrow", "0.76", "0.723", "0.871", "0.792"))
+    assert all(n in checks[5] for n in ("0.552", "0.677", "0.543", "0.68", "0.628", "0.771", "n = 96", "Clopper", "[0.447, 0.654]", "[0.574, 0.769]", "2 to 12 of 16", "0.203", "tie-order artefact", "point gain (no pre-registered criterion)", "photographers", "Chipping Sparrow", "Song Sparrow", "0.76", "0.723", "0.871", "0.792"))
     assert "No fresh-test number" not in checks[5] and "pending the hosted run" not in checks[3]
     assert all(n in checks[3] for n in ("0.8758", "0.8767", "0.8667", "0.0009", "0.02"))
     assert "0.680" in checks[4] and "epoch 4" in checks[4]
