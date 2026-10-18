@@ -483,3 +483,18 @@ Display-only. It was added after the fresh test had been scored, it decides noth
 The re-derivation uses the printed counts, not the per-image file (not retrieved, above). Read it as a paired check of the
 direction of the accuracy change on these 96 photographs, made after the fact; it is not a pre-registered test and does not
 change the record's reading (no primary endpoint was pre-registered; the gain is concentrated in the White-throated Sparrow).
+
+## Execution-log redaction (2026-10-18)
+
+The four committed Colab CLI `exec.log` files named the operator's home directory in their two
+`[colab] ... notebook` lines. Those two lines now read `<local-run-dir>/...`; no other byte changed, and the
+executed notebooks and `run_summary.json` files are untouched. SHA-256 as captured → as committed:
+
+| Log | Captured | Committed |
+|---|---|---|
+| `2026-10-09-20ffef4/exec.log` | `49c2bc4786dd3457173347cd0bc65bdce008384e8bc5773dbc6a93783d76b22e` | `f3e8ef83087762792077d84b89d3af3cc879d619296de0803c8fc7e723c804ff` |
+| `2026-10-18-6df20c7/exec.log` | `449378407f9baa7d5abece28cb3e7a49e29da0a9df0032662c4c6c303d086233` | `2903d64fbbf8d4a65d197c3c65a6ae66a2dbd6a429804dd49482a2c08855bf07` |
+| `2026-10-18-e9ff7f9/exec.log` | `a90e49529694396374e0676d155a40686bcbfcec6af3aadf7908e37dd875193d` | `a611a870123787bca77e5af85de5baf20af1ccf76aa5da5c58086cf604f516ae` |
+| `2026-10-18-6176ddb/exec.log` | `f4dcda8aa3f9c182cad81203365538d17a256a1f1ddabd961057795c400498df` | `087c0ee7e0322c9bf8b921c9889835b649d24324aa900a2bf65957e3cea39f3c` |
+
+Hashes quoted elsewhere in this file for these logs are the captured values.
