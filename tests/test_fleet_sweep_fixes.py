@@ -199,8 +199,9 @@ RECORD = ROOT / "docs" / "release-verification.md"
 
 
 def test_swp_g_checkpoint_answers_quote_the_recorded_runs():
-    """Every number in a Check-your-reasoning answer names its run (R82-m1): the 2026-10-09 Colab CLI T4 run of the
-    previous blob, recorded in docs/release-verification.md, or the 2026-10-18 CPU build record of this version."""
+    """Every number in a Check-your-reasoning answer names its run (R82-m1, REL13): the 2026-10-18 Colab CLI T4
+    pre-registered evaluation of record (6df20c7 / blob 1f274277), the 2026-10-09 Colab CLI T4 run of the previous blob,
+    both recorded in docs/release-verification.md, or the 2026-10-18 CPU build record."""
     markdown = "\n".join(c["source"] for c in _nb(NB)["cells"] if c["cell_type"] == "markdown")
     checks = re.findall(r"<details><summary>Check your reasoning</summary>(.*?)</details>", markdown, re.S)
     assert len(checks) == 7
@@ -209,10 +210,15 @@ def test_swp_g_checkpoint_answers_quote_the_recorded_runs():
     for number in hosted:
         assert number in record, number
     assert all(n in checks[2] for n in ("0.167", "0.26", "0.76", "0.723", "0.479", "9 October 2026"))
-    assert all(n in checks[5] for n in ("0.723", "0.871", "0.792", "0.44", "0.75", "0.62", "9 October 2026"))
+    fresh = ("0.552", "0.677", "0.543", "0.68", "0.628", "0.771", "chipping_sparrow", "song_sparrow")
+    for number in fresh:
+        assert number in record, number
+    assert all(n in checks[5] for n in ("0.552", "0.677", "0.543", "0.68", "0.628", "0.771", "n = 96", "No interval", "Chipping Sparrow", "Song Sparrow", "0.76", "0.723", "0.871", "0.792"))
+    assert "No fresh-test number" not in checks[5] and "pending the hosted run" not in checks[3]
+    assert all(n in checks[3] for n in ("0.8758", "0.8767", "0.8667", "0.0009", "0.02"))
     assert "0.680" in checks[4] and "epoch 4" in checks[4]
-    for answer in (checks[1], checks[3], checks[4], checks[5], checks[6]):
-        assert "CPU build record of 18 October 2026" in answer
+    for answer in (checks[1], checks[2], checks[3], checks[4], checks[5], checks[6]):
+        assert "pre-registered evaluation of record of 18 October 2026" in answer and "1f274277" in answer
     assert "@@" not in markdown
     assert "Kaggle T4 run" not in markdown and "pre-flight" not in markdown
 
