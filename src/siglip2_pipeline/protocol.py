@@ -41,11 +41,18 @@ PREREGISTERED_SETTINGS: dict[str, Any] = {
     "class_names": "common names",
     "grid_run": True,
 }
-# SCORE_ONCE_RULE item 8: a runtime cannot know about other runtimes, so the labels say "(this runtime)"; which run is the
-# evaluation of record (the first hosted pre-registered run) is stated only in docs/release-verification.md.
-TEST_LOOKS = ("pre-registered evaluation (this runtime)", "reproduction (this runtime)", "not scored (exploratory)")
-# The first hosted pre-registered run, once recorded in docs/release-verification.md (None until then).
-RECORDED_EVALUATION: dict[str, Any] | None = None
+# SCORE_ONCE_RULE item 8: a runtime cannot know about other runtimes, so the first two labels say "(this runtime)"; the
+# evaluation of record (the first hosted pre-registered run) is stated in docs/release-verification.md.
+# Once the evaluation of record is carried here (RECORDED_EVALUATION), every later identical run is labelled
+# "reproduction of the pre-registered evaluation" (SCORE_ONCE_RULE item 3), in any runtime.
+REPRODUCTION_OF_RECORD = "reproduction of the pre-registered evaluation"
+TEST_LOOKS = ("pre-registered evaluation (this runtime)", "reproduction (this runtime)", "not scored (exploratory)", REPRODUCTION_OF_RECORD)
+# The first hosted pre-registered run, as recorded in docs/release-verification.md.
+RECORDED_EVALUATION: dict[str, Any] | None = {
+    "run": "Colab CLI T4, 2026-10-18, commit 6df20c7, blob 1f274277",
+    "record": "docs/release-verification.md",
+    "evidence": "docs/execution-evidence/2026-10-18-6df20c7/",
+}
 MODEL_STATE_MISMATCH = "model state is not the selected adapted model"
 _ADAPTER_KEYS = ("epochs", "lr", "trainable_vision_layers", "seed", "best_epoch", "n_train", "n_val", "batch_size")
 
@@ -149,23 +156,31 @@ def settings_differing(
     return differing
 
 
-def look_at_test(differing: list[str], prior: Mapping[str, Any] | None = None) -> str:
-    """`not scored (exploratory)` when any setting differs; `reproduction (this runtime)` when an earlier report in this
+def look_at_test(
+    differing: list[str],
+    prior: Mapping[str, Any] | None = None,
+    recorded: Mapping[str, Any] | None = RECORDED_EVALUATION,
+) -> str:
+    """`not scored (exploratory)` when any setting differs; `reproduction of the pre-registered evaluation` when the
+    evaluation of record is carried (`recorded`); else `reproduction (this runtime)` when an earlier report in this
     runtime carries a pre-registered scoring; else `pre-registered evaluation (this runtime)`."""
     if differing:
         return TEST_LOOKS[2]
+    if recorded is not None:
+        return TEST_LOOKS[3]
     if (prior or {}).get("test_look") in TEST_LOOKS[:2]:
         return TEST_LOOKS[1]
     return TEST_LOOKS[0]
 
 
 def output_suffix(path: str | Path, test_look: str) -> str:
-    """One suffix per run for every file it writes: '' for the first pre-registered scoring in this runtime,
-    `_reproduction_<n>` or `_exploratory_<n>` (first free n beside `path`) otherwise, so no run overwrites another."""
-    if test_look == TEST_LOOKS[0]:
-        return ""
-    kind = "reproduction" if test_look == TEST_LOOKS[1] else "exploratory"
+    """One suffix per run for every file it writes: '' for the first pre-registered scoring, or the first reproduction
+    of the record, in this runtime; `_reproduction_<n>` or `_exploratory_<n>` (first free n beside `path`) otherwise, so
+    no run overwrites another."""
     path = Path(path)
+    if test_look == TEST_LOOKS[0] or (test_look == TEST_LOOKS[3] and not path.exists()):
+        return ""  # a reproduction of the record writes the documented paths in a fresh runtime, never over a file
+    kind = "exploratory" if test_look == TEST_LOOKS[2] else "reproduction"
     n = 1
     while path.with_name(f"{path.stem}_{kind}_{n}{path.suffix}").exists():
         n += 1

@@ -137,7 +137,8 @@ crawl without an instance manifest.
   identical run in the same runtime is labelled `reproduction (this runtime)` and written to
   `*_reproduction_<n>.json`.
 - **Evaluation of record.** It is the **first hosted pre-registered run**, recorded in
-  `docs/release-verification.md`. Until then `RECORDED_EVALUATION = None`.
+  `docs/release-verification.md`: the Colab CLI T4 run of 2026-10-18 (`6df20c7`, blob `1f274277`), now carried in
+  `RECORDED_EVALUATION`. Every later identical run is labelled `reproduction of the pre-registered evaluation`.
 - **Exploratory runs.** These include any form change, BYOD, the grid turned off, a smaller batch for memory, the
   optional experiments, and the CI integration job (which sets `DIMER_FRESH_TEST_MASK=1`). They do **not** score the
   fresh test. They read validation and the exposed development test, and write `*_exploratory_<n>.json`.

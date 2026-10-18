@@ -127,9 +127,9 @@ def test_any_changed_setting_makes_the_run_exploratory(change):
 def test_identical_settings_are_preregistered_then_a_reproduction(tmp_path):
     differing = settings_differing(_settings(), _selection(), FP, [])
     assert differing == []
-    first = look_at_test(differing, None)
+    first = look_at_test(differing, None, recorded=None)  # before the evaluation of record was carried
     assert first == TEST_LOOKS[0] == "pre-registered evaluation (this runtime)"
-    assert look_at_test(differing, {"test_look": first}) == "reproduction (this runtime)"
+    assert look_at_test(differing, {"test_look": first}, recorded=None) == "reproduction (this runtime)"
     report = tmp_path / "x_evaluation_report.json"
     assert output_suffix(report, TEST_LOOKS[0]) == ""
     assert output_suffix(report, TEST_LOOKS[1]) == "_reproduction_1"
@@ -145,7 +145,21 @@ def test_grid_selection_must_come_from_this_run_and_the_model_state_must_match()
     adapter = {"epochs": 6, "lr": 5e-5, "trainable_vision_layers": 2, "seed": 0, "best_epoch": 4, "n_train": 216, "n_val": 48, "batch_size": 16}
     assert adapter_mismatch(adapter, dict(adapter)) == []
     assert adapter_mismatch(None, adapter) and adapter_mismatch(adapter, {**adapter, "best_epoch": 3})
-    assert RECORDED_EVALUATION is None  # until the first hosted pre-registered run is recorded
+    assert RECORDED_EVALUATION is not None and RECORDED_EVALUATION["run"] == "Colab CLI T4, 2026-10-18, commit 6df20c7, blob 1f274277"
+    assert RECORDED_EVALUATION["record"] == "docs/release-verification.md"
+
+
+def test_a_later_identical_run_is_a_reproduction_of_the_recorded_evaluation(tmp_path):
+    differing = settings_differing(_settings(), _selection(), FP, [])
+    assert differing == []
+    assert look_at_test(differing) == TEST_LOOKS[3] == "reproduction of the pre-registered evaluation"
+    assert look_at_test(differing, {"test_look": TEST_LOOKS[3]}) == TEST_LOOKS[3]
+    assert look_at_test(["epochs"]) == "not scored (exploratory)"  # the record never makes a changed run count
+    report = tmp_path / "x_evaluation_report.json"
+    assert output_suffix(report, TEST_LOOKS[3]) == ""  # fresh runtime: the documented paths
+    report.write_text("{}")
+    assert output_suffix(report, TEST_LOOKS[3]) == "_reproduction_1"  # never over an earlier file
+    assert "reproduction of the pre-registered evaluation" in _notebook_text()
 
 
 # --- fresh test pins (preregistration section 4) ----------------------------------------------------------------

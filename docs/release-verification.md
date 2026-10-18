@@ -278,7 +278,8 @@ Applies only to `DIMER_MultiModel_Vision_Language_Retrieval_Workshop.ipynb`: not
 - **Evaluation of record:** the 2026-10-18 Colab CLI T4 run of `6df20c7` / blob `1f274277` (section below). Later
   identical hosted runs are reproductions. No fresh-test number was computed before it: the CPU build record below
   ran with the fresh test **masked**, and CI's integration job did not run on this PR (it sets
-  `DIMER_FRESH_TEST_MASK=1` when it does). `RECORDED_EVALUATION` in `protocol.py` is still `None` (requote pending).
+  `DIMER_FRESH_TEST_MASK=1` when it does). `RECORDED_EVALUATION` in `protocol.py` names this record, so a later
+  identical run labels itself `reproduction of the pre-registered evaluation`.
 
 ### CPU build record, fresh test masked (2026-10-18; not a hosted run; REL13: exploratory, no development look)
 
