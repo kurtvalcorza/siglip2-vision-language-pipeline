@@ -35,7 +35,7 @@ This repository ships one standalone Google Colab tutorial that exercises its pu
   *Zero-shot classification, embeddings, similarity and retrieval with the pinned `google/siglip2-base-patch16-224` weights, then bounded supervised fine-tuning of the vision tower's last blocks on 360 CC0 iNaturalist photographs of six bird species: the frozen model's accuracy, macro F1 and text-to-image mAP beside the majority-floor and colour-nearest-neighbour baselines, SigLIP's sigmoid loss with validation-mAP epoch selection, held-out evaluation per species on two prompt sets, the drawn shapes re-scored, and a safetensors adapter that reloads with verified parity.*
 
 > [!NOTE]
-> The notebook runs on CPU and uses CUDA automatically when present. It remains a release candidate; see [release verification](docs/release-verification.md) for execution records and promotion requirements.
+> The notebook runs on CPU and uses CUDA automatically when present. It remains a release candidate; see [release verification](docs/release-verification.md) for execution records and promotion requirements. The pre-registered evaluation of record ran on 2026-10-18 on a fresh Colab Tesla T4 (Colab CLI, `6df20c7` / blob `1f274277`, 17/17 code cells, 0 errors): fresh test (96) accuracy frozen 0.552 → adapted 0.677, macro F1 0.543 → 0.68, t2i mAP 0.628 → 0.771 (majority 0.167 / 0.048 / 0.312, colour neighbour 0.208 / 0.21 / 0.245); exposed development test 0.76 → 0.792 accuracy, 0.723 → 0.871 mAP (evidence in `docs/execution-evidence/2026-10-18-6df20c7/`).
 
 ---
 
