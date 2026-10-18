@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 
 def run_notebook(path: Path) -> None:
+    # SCORE_ONCE_RULE item 8: a CI or local CPU execution never scores the fresh test.
+    os.environ.setdefault("DIMER_FRESH_TEST_MASK", "1")
     notebook = json.loads(path.read_text(encoding="utf-8"))
     namespace: dict[str, object] = {"__name__": "__main__"}
     for index, cell in enumerate(notebook.get("cells", [])):

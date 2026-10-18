@@ -199,70 +199,94 @@ RECORD = ROOT / "docs" / "release-verification.md"
 
 
 def test_swp_g_checkpoint_answers_quote_the_recorded_runs():
-    """Every number in a Check-your-reasoning answer is in the recorded 2026-09-20 Kaggle T4 run or the recorded pre-flight."""
+    """Every number in a Check-your-reasoning answer names its run (R82-m1, REL13): the 2026-10-18 Colab CLI T4
+    pre-registered evaluation of record (6df20c7 / blob 1f274277), the 2026-10-09 Colab CLI T4 run of the previous blob,
+    both recorded in docs/release-verification.md, or the 2026-10-18 CPU build record."""
     markdown = "\n".join(c["source"] for c in _nb(NB)["cells"] if c["cell_type"] == "markdown")
     checks = re.findall(r"<details><summary>Check your reasoning</summary>(.*?)</details>", markdown, re.S)
-    assert len(checks) == 6
+    assert len(checks) == 7
     record = RECORD.read_text(encoding="utf-8")
-    hosted = ("0.167", "0.26", "0.76", "0.792", "0.758", "0.793", "0.723", "0.871", "0.148", "0.031", "0.479", "0.51", "0.459", "0.453", "0.467", "0.492", "0.44", "0.75", "0.62", "0.94", "0.35", "0.89")
-    preflight = ("0.680", "0.874", "0.854", "0.863", "0.876", "0.872", "85,062,712", "45 tensors", "8/8", "top-1 1.0")
-    for number in hosted + preflight:
+    hosted = ("0.167", "0.26", "0.76", "0.792", "0.758", "0.793", "0.723", "0.871", "0.479", "0.51", "0.459", "0.453", "0.467", "0.492", "0.44", "0.75", "0.62", "0.94", "0.680", "0.874", "0.854", "0.863", "0.876", "0.872")
+    for number in hosted:
         assert number in record, number
-    assert all(n in checks[2] for n in ("0.167", "0.26", "0.76", "0.723", "0.479"))
-    assert all(n in checks[4] for n in ("0.723", "0.871", "0.792", "0.44", "0.75", "0.62"))
-    assert "0.680" in checks[3] and "epoch 4" in checks[3]
+    assert all(n in checks[2] for n in ("0.167", "0.26", "0.76", "0.723", "0.479", "9 October 2026"))
+    fresh = ("0.552", "0.677", "0.543", "0.68", "0.628", "0.771", "chipping_sparrow", "song_sparrow")
+    for number in fresh:
+        assert number in record, number
+    assert all(n in checks[5] for n in ("0.552", "0.677", "0.543", "0.68", "0.628", "0.771", "n = 96", "Clopper", "[0.447, 0.654]", "[0.574, 0.769]", "2 to 12 of 16", "0.203", "tie-order artefact", "point gain (no pre-registered criterion)", "photographers", "Chipping Sparrow", "Song Sparrow", "0.76", "0.723", "0.871", "0.792"))
+    assert "No fresh-test number" not in checks[5] and "pending the hosted run" not in checks[3]
+    assert all(n in checks[3] for n in ("0.8758", "0.8767", "0.8667", "0.0009", "0.02"))
+    assert "0.680" in checks[4] and "epoch 4" in checks[4]
+    for answer in (checks[1], checks[2], checks[3], checks[4], checks[5], checks[6]):
+        assert "pre-registered evaluation of record of 18 October 2026" in answer and "1f274277" in answer
+    assert "@@" not in markdown
+    assert "Kaggle T4 run" not in markdown and "pre-flight" not in markdown
+
+
+def _compare_fn():
+    s8 = _cell(_nb(NB), "def compare(majority, neighbour, frozen, adapted, frozen_sci, adapted_sci):")
+    from siglip2_pipeline.protocol import point_verdict
+
+    ns = {"point_verdict": point_verdict}
+    exec(s8[s8.index("def fields(result):") : s8.index("\n\n\nadapted_val = ")], ns)
+    return ns
 
 
 def test_swp_a_no_quality_assert_remains_and_verdicts_reach_the_report():
     code = "\n".join(c["source"] for c in _code_cells(_nb(NB)))
-    assert "assert frozen_test['t2i_map'] > baseline_majority['t2i_map']" not in code
-    assert "assert adapted_test['t2i_map'] > frozen_test['t2i_map']" not in code
     quality = [line for line in code.splitlines() if line.strip().startswith("assert ") and re.search(r"\['(t2i_map|accuracy|macro_f1)'\]", line)]
     assert quality == []
     assert "assert parity['identical_rows'] == parity['of']" in code  # reload parity stays a hard check
-    s6 = _cell(_nb(NB), "frozen_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)")
-    frozen_line = next(line for line in s6.splitlines() if line.startswith("frozen_verdict = "))
-    s8 = _cell(_nb(NB), "adapted_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)")
-    block = s8[s8.index("delta_map = ") : s8.index("for key, row in comparison.items():")]
+    ns = _compare_fn()
+
+    def result(t2i_map, accuracy):
+        return {"t2i_map": t2i_map, "accuracy": accuracy, "macro_f1": accuracy, "per_class": {"a": {"n": 1, "recall": accuracy, "ap": t2i_map}}}
+
+    ns["classes"] = ["a"]
+    ns["METRICS"] = ("accuracy", "macro_f1", "t2i_map")
+    majority, neighbour = result(0.203, 0.167), result(0.2, 0.26)
     cases = (
-        ({"t2i_map": 0.723, "accuracy": 0.76}, {"t2i_map": 0.871, "accuracy": 0.792}, ("above the baselines", "improved", "improved")),
-        ({"t2i_map": 0.2, "accuracy": 0.2}, {"t2i_map": 0.2, "accuracy": 0.1}, ("not above the baselines", "no gain", "worse")),
-        ({"t2i_map": 0.723, "accuracy": 0.76}, {"t2i_map": 0.6, "accuracy": 0.76}, ("above the baselines", "worse", "no gain")),
+        (result(0.723, 0.76), result(0.871, 0.792), ("above the baselines", "point gain (no pre-registered criterion)", "point gain (no pre-registered criterion)")),
+        (result(0.2, 0.2), result(0.2, 0.1), ("not above the baselines", "no change", "point loss (no pre-registered criterion)")),
+        (result(0.723, 0.76), result(0.6, 0.76), ("above the baselines", "point loss (no pre-registered criterion)", "no change")),
     )
     for frozen, adapted, expected in cases:
-        ns = {"frozen_test": frozen, "adapted_test": adapted, "baseline_majority": {"t2i_map": 0.203}, "baseline_neighbour": {"accuracy": 0.26}, "comparison": {}}
-        exec(frozen_line, ns)
-        exec(block, ns)
-        verdicts = ns["comparison"]["verdicts"]
-        assert (verdicts["frozen_vs_baselines"], verdicts["adapted_vs_frozen_t2i_map"], verdicts["adapted_vs_frozen_accuracy"]) == expected
-    assert s8.index("comparison['verdicts'] = ") < s8.index("json.dump(evaluation_report_payload")
+        table = ns["compare"](majority, neighbour, frozen, adapted, frozen, adapted)
+        verdict = table["verdict"]
+        assert (verdict["frozen_vs_baselines"], verdict["adapted_vs_frozen_t2i_map"], verdict["adapted_vs_frozen_accuracy"]) == expected
+    kept_frozen = ns["compare"](majority, neighbour, result(0.7, 0.7), None, result(0.5, 0.5), None)
+    assert "adaptation not kept" in kept_frozen["verdict"]["adapted_vs_frozen_t2i_map"]
+    s8 = _cell(_nb(NB), "def compare(majority, neighbour, frozen, adapted, frozen_sci, adapted_sci):")
+    assert s8.index("development_view = ") < s8.index("atomic_write_json(written, evaluation_report_payload)")
     assert "'comparison': comparison," in _cell(_nb(NB), "result_payload = {")
 
 
-def test_swp_f_frozen_pipeline_reloads_an_adapted_pipeline_and_keeps_a_frozen_one(capsys):
+def test_swp_f_frozen_pipeline_restores_an_adapted_pipeline_and_keeps_a_frozen_one(capsys):
     s6 = _cell(_nb(NB), "def frozen_pipeline():")
     helper = s6[s6.index("def frozen_pipeline():") : s6.index("\n\n\nfrozen_pipeline()")]
-    loads = []
+    calls = []
 
-    class Stand:
-        @staticmethod
-        def from_pretrained(weights_dir):
-            loads.append(weights_dir)
-            return types.SimpleNamespace(adapter=None)
+    class Pipe:
+        adapter = {"best_epoch": 4}
 
-    ns = {"pipe": types.SimpleNamespace(adapter={"best_epoch": 4}), "Siglip2Pipeline": Stand, "WEIGHTS_DIR": "w"}
+        def restore_base(self):
+            calls.append("restore")
+            self.adapter = None
+
+    ns = {"pipe": Pipe()}
     exec(helper, ns)
     ns["frozen_pipeline"]()
-    assert loads == ["w"] and ns["pipe"].adapter is None
-    assert "reloaded from the verified snapshot" in capsys.readouterr().out
+    assert calls == ["restore"] and ns["pipe"].adapter is None
+    assert "base tensors restored" in capsys.readouterr().out
     ns["frozen_pipeline"]()
-    assert loads == ["w"]  # a frozen pipeline is kept
-    assert "already frozen" in capsys.readouterr().out
+    assert calls == ["restore"]  # a frozen pipeline is kept
 
 
-def test_swp_f_sections_6_and_7_call_frozen_pipeline_before_scoring_or_training():
-    s6 = _cell(_nb(NB), "frozen_test = pipe.evaluate(test_records, classes=classes, class_names_map=display_names)")
-    assert s6.index("\nfrozen_pipeline()\n") < s6.index("frozen_test = pipe.evaluate(")
+def test_swp_f_sections_6_7_and_7b_restore_the_base_before_scoring_or_training():
+    s6 = _cell(_nb(NB), "frozen_dev = pipe.evaluate(dev_records, classes=classes, class_names_map=display_names)")
+    assert s6.index("\nfrozen_pipeline()\n") < s6.index("frozen_dev = pipe.evaluate(")
+    grid = _cell(_nb(NB), "grid_selection = select_config(")
+    assert grid.index("frozen_pipeline()") < grid.index("run = pipe.adapt(") < grid.index("pipe.restore_base()")
     s7 = _cell(_nb(NB), "adapt_result = pipe.adapt(")
     assert s7.index("frozen_pipeline()") < s7.index("adapt_result = pipe.adapt(")
 
