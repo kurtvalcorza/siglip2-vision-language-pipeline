@@ -225,7 +225,9 @@ def test_swp_g_checkpoint_answers_quote_the_recorded_runs():
 
 def _compare_fn():
     s8 = _cell(_nb(NB), "def compare(majority, neighbour, frozen, adapted, frozen_sci, adapted_sci):")
-    ns = {}
+    from siglip2_pipeline.protocol import point_verdict
+
+    ns = {"point_verdict": point_verdict}
     exec(s8[s8.index("def fields(result):") : s8.index("\n\n\nadapted_val = ")], ns)
     return ns
 
@@ -244,9 +246,9 @@ def test_swp_a_no_quality_assert_remains_and_verdicts_reach_the_report():
     ns["METRICS"] = ("accuracy", "macro_f1", "t2i_map")
     majority, neighbour = result(0.203, 0.167), result(0.2, 0.26)
     cases = (
-        (result(0.723, 0.76), result(0.871, 0.792), ("above the baselines", "improved", "improved")),
-        (result(0.2, 0.2), result(0.2, 0.1), ("not above the baselines", "no change", "worse")),
-        (result(0.723, 0.76), result(0.6, 0.76), ("above the baselines", "worse", "no change")),
+        (result(0.723, 0.76), result(0.871, 0.792), ("above the baselines", "point gain (no pre-registered criterion)", "point gain (no pre-registered criterion)")),
+        (result(0.2, 0.2), result(0.2, 0.1), ("not above the baselines", "no change", "point loss (no pre-registered criterion)")),
+        (result(0.723, 0.76), result(0.6, 0.76), ("above the baselines", "point loss (no pre-registered criterion)", "no change")),
     )
     for frozen, adapted, expected in cases:
         table = ns["compare"](majority, neighbour, frozen, adapted, frozen, adapted)
@@ -255,7 +257,7 @@ def test_swp_a_no_quality_assert_remains_and_verdicts_reach_the_report():
     kept_frozen = ns["compare"](majority, neighbour, result(0.7, 0.7), None, result(0.5, 0.5), None)
     assert "adaptation not kept" in kept_frozen["verdict"]["adapted_vs_frozen_t2i_map"]
     s8 = _cell(_nb(NB), "def compare(majority, neighbour, frozen, adapted, frozen_sci, adapted_sci):")
-    assert s8.index("development_view = ") < s8.index("json.dump(evaluation_report_payload")
+    assert s8.index("development_view = ") < s8.index("atomic_write_json(written, evaluation_report_payload)")
     assert "'comparison': comparison," in _cell(_nb(NB), "result_payload = {")
 
 

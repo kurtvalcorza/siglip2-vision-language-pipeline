@@ -362,6 +362,10 @@ class Siglip2Pipeline:
             {
                 "classes": class_list,
                 "predictions": [class_list[int(i)] for i in scores.argmax(axis=1)],
+                # Per-image rows for paired, clearly labelled post-hoc analyses (R82 peer review, 2026-10-18).
+                "ids": [str(r["id"]) for r in checked],
+                "gold": [str(r["label"]) for r in checked],
+                "prediction_scores": [float(v) for v in scores.max(axis=1)],
                 "prompt_template": prompt_template,
                 "score": "logits_per_image (sigmoid-scaled cosine)",
                 "verdict": "measured"

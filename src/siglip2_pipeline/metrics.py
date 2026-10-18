@@ -50,19 +50,29 @@ def _per_class(pred: np.ndarray, gold: np.ndarray, n_classes: int) -> dict[str, 
 
 
 def average_precision(scores: Sequence[float], relevant: Sequence[bool]) -> float:
-    """AP of ranking `scores` descending against binary relevance (0 when nothing is relevant)."""
+    """AP of ranking `scores` descending against binary relevance (0 when nothing is relevant).
+
+    Tied scores get the **expected** AP over every order of the tied items (R82-M3, 2026-10-18), so the result never
+    depends on record order: a constant scorer gets the chance AP. Without ties this is the ordinary AP."""
     scores_arr = np.asarray(scores, dtype=np.float64)
     rel = np.asarray(relevant, dtype=bool)
     if scores_arr.shape != rel.shape or scores_arr.ndim != 1:
         raise ValueError("scores and relevant must be parallel 1-D sequences")
     if not rel.any():
         return 0.0
-    order = np.argsort(-scores_arr, kind="stable")
-    hits, total = 0, 0.0
-    for rank, index in enumerate(order, start=1):
-        if rel[index]:
-            hits += 1
-            total += hits / rank
+    values, inverse = np.unique(-scores_arr, return_inverse=True)  # ascending -score = descending score
+    total, before, hits_before = 0.0, 0, 0
+    for group in range(len(values)):
+        members = inverse == group
+        n, r = int(members.sum()), int(rel[members].sum())
+        if r:
+            # A relevant item at uniform position j of the tied block expects (r - 1)(j - 1)/(n - 1) other relevant
+            # items ahead of it inside the block, so its expected precision is exact by linearity.
+            others = (r - 1) / (n - 1) if n > 1 else 0.0
+            j = np.arange(1, n + 1, dtype=np.float64)
+            total += r * float(np.mean((hits_before + 1 + others * (j - 1)) / (before + j)))
+        before += n
+        hits_before += r
     return total / int(rel.sum())
 
 

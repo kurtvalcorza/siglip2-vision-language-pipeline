@@ -179,7 +179,7 @@ TEMPLATE = {
                 "os.makedirs('outputs', exist_ok=True)\n"
                 '# A grid selection or a Section 7b result from an earlier data load never carries over to this one.\n'
                 'grid_selection = adapt_result = None\n'
-                "FRESH_TEST_MASKED = os.environ.get(FRESH_TEST_MASK_ENV) == '1'  # CI / CPU development checks (SCORE_ONCE_RULE item 8)\n"
+                "FRESH_TEST_MASKED = parse_mask(os.environ.get(FRESH_TEST_MASK_ENV))  # CI / CPU development checks (SCORE_ONCE_RULE item 8)\n"
                 '\n'
                 '\n'
                 'class BYODRefusal(ValueError):\n'
@@ -268,7 +268,7 @@ TEMPLATE = {
                 "fresh_records = fresh_manifest['records'] if fresh_manifest else None\n"
                 "dev_label = 'exposed development test' if not USE_BYOD else 'your own test split (BYOD, exploratory)'\n"
                 'classes = class_names(train_records)\n'
-                "write_dataset_csv(train_records, 'outputs/{stem}_train.csv')\n"
+                "train_csv = write_dataset_csv(train_records, run_numbered('outputs/{stem}_train.csv'))  # a later data load never overwrites an earlier run's table\n"
                 "print({{'data_source': data_source, 'raw_rows': raw_rows, 'sets': disjoint, 'test_role': dev_label, 'observer_overlap': observer_overlap(splits), 'classes': classes}})\n"
                 "for name, manifest in {{**dataset_manifests, **({{'fresh_test': fresh_manifest}} if fresh_manifest else {{}})}}.items():\n"
                 "    print({{name: {{'n': manifest['n_records'], 'label_counts': manifest['label_counts'], 'image_side': manifest['image_side'], 'digest': manifest['digest'][:16] + '...'}}}})\n"
@@ -455,8 +455,8 @@ TEMPLATE = {
                 "    grid_selection = select_config({{n: r['best_val_t2i_map'] for n, r in grid_results.items()}}, frozen_val_map, fingerprint=grid_fingerprint)\n"
                 '    grid_seconds = round(time.perf_counter() - t_grid, 1)\n'
                 "    print({{'grid_selection': {{k: grid_selection[k] for k in ('selected', 'config', 'adaptation_kept', 'reason', 'scores', 'frozen_val_map', 'margin')}}, 'seconds': grid_seconds}})\n"
-                "    with open('outputs/{stem}_grid.json', 'w', encoding='utf-8') as handle:\n"
-                "        json.dump({{'purpose': 'selection only (validation); no test set is read', 'preregistration': PREREGISTRATION, 'data_source': data_source, 'n_validation': len(val_records), 'fixed': {{'epochs': GRID_EPOCHS, 'batch_size': GRID_BATCH_SIZE, 'seed': GRID_SEED, 'prompt_template': DEFAULT_PROMPT_TEMPLATE}}, 'results': grid_results, 'selection': grid_selection, 'seconds': grid_seconds}}, handle, indent=2)\n"
+                "    grid_file = run_numbered('outputs/{stem}_grid.json')  # never overwrites an earlier run's grid\n"
+                "    atomic_write_json(grid_file, {{'purpose': 'selection only (validation); no test set is read', 'preregistration': PREREGISTRATION, 'data_source': data_source, 'n_validation': len(val_records), 'fixed': {{'epochs': GRID_EPOCHS, 'batch_size': GRID_BATCH_SIZE, 'seed': GRID_SEED, 'prompt_template': DEFAULT_PROMPT_TEMPLATE}}, 'results': grid_results, 'selection': grid_selection, 'seconds': grid_seconds}})\n"
                 'else:\n'
                 "    print('RUN_GRID is off: no configuration is selected in this run, so the run is exploratory and Section 8 will not score the fresh test.')"
             ),
@@ -531,14 +531,14 @@ TEMPLATE = {
             'code': (
                 'import shutil\n'
                 '\n'
-                "run_settings = {{'data_source': 'pinned sample' if not USE_BYOD else 'BYOD', 'pin_manifest_sha256': pin_manifest_digest() if not USE_BYOD else None, 'fresh_manifest_sha256': fresh_manifest_digest() if fresh_records else None, 'fresh_test_masked': FRESH_TEST_MASKED, 'split_seed': SPLIT_SEED, 'split_sizes': dict(SAMPLE_SPLIT) if not USE_BYOD else 'BYOD fractions', 'adapt_seed': (adapt_result or {{}}).get('seed'), 'epochs': EPOCHS, 'batch_size': BATCH_SIZE, 'prompt_template': DEFAULT_PROMPT_TEMPLATE, 'class_names': 'common names' if not USE_BYOD else 'BYOD labels', 'grid_run': grid_selection is not None, 'trainable_vision_layers': layers_used, 'lr': lr_used}}\n"
+                "run_settings = {{'model_id': MODEL_ID, 'model_revision': MODEL_REVISION, 'data_source': 'pinned sample' if not USE_BYOD else 'BYOD', 'pin_manifest_sha256': pin_manifest_digest() if not USE_BYOD else None, 'fresh_manifest_sha256': fresh_manifest_digest() if fresh_records else None, 'fresh_test_masked': FRESH_TEST_MASKED, 'split_seed': SPLIT_SEED, 'split_sizes': dict(SAMPLE_SPLIT) if not USE_BYOD else 'BYOD fractions', 'adapt_seed': (adapt_result or {{}}).get('seed'), 'epochs': EPOCHS, 'batch_size': BATCH_SIZE, 'prompt_template': DEFAULT_PROMPT_TEMPLATE, 'class_names': 'common names' if not USE_BYOD else 'BYOD labels', 'grid_run': grid_selection is not None, 'trainable_vision_layers': layers_used, 'lr': lr_used}}\n"
                 "run_fingerprint_now = run_fingerprint(data_source=run_settings['data_source'], pin_manifest_sha256=run_settings['pin_manifest_sha256'], split_seed=SPLIT_SEED, validation_digest=dataset_manifests['validation']['digest'], epochs=PREREGISTERED_SETTINGS['epochs'], batch_size=PREREGISTERED_SETTINGS['batch_size'], seed=PREREGISTERED_SETTINGS['adapt_seed'], prompt_template=DEFAULT_PROMPT_TEMPLATE)\n"
                 '# The fresh test needs the model Section 7b trained, not a base restored by a later re-run of Section 6 or 7.\n'
                 'model_state = adapter_mismatch(pipe.adapter, adapt_result)\n'
                 'differing = settings_differing(run_settings, grid_selection, run_fingerprint_now, model_state)\n'
                 'preregistered = not differing  # SCORE_ONCE_RULE: computed from ALL pre-registered settings, not one field\n'
                 "report_path = Path('outputs/{stem}_evaluation_report.json')\n"
-                "prior_report = json.loads(report_path.read_text(encoding='utf-8')) if report_path.exists() else None\n"
+                "prior_report = read_json_or_none(report_path)  # an empty or corrupt earlier report never breaks this run\n"
                 'test_look = look_at_test(differing, prior_report)\n'
                 "adaptation_kept = bool(grid_selection['adaptation_kept']) if grid_selection else True\n"
                 "print({{'preregistered': preregistered, 'test_look': test_look, 'settings_differing': differing, 'adaptation_kept': adaptation_kept}})\n"
@@ -555,13 +555,13 @@ TEMPLATE = {
                 '    table = {{metric: {{name: round(float(r[metric]), 3) for name, r in systems.items()}} for metric in METRICS}}\n'
                 "    table['scientific_name_prompts'] = {{metric: {{'frozen': round(float(frozen_sci[metric]), 3), **({{'adapted': round(float(adapted_sci[metric]), 3)}} if adapted_sci else {{}})}} for metric in METRICS}}\n"
                 '    before = fields(frozen)\n'
-                "    table['verdict'] = {{'frozen_vs_baselines': 'above the baselines' if frozen['t2i_map'] > majority['t2i_map'] and frozen['accuracy'] > neighbour['accuracy'] else 'not above the baselines'}}\n"
+                "    table['verdict'] = {{'criterion': 'none pre-registered: descriptive point estimates', 'frozen_vs_baselines': 'above the baselines' if frozen['t2i_map'] > majority['t2i_map'] and frozen['accuracy'] > neighbour['accuracy'] else 'not above the baselines'}}\n"
                 '    if adapted:\n'
                 '        after = fields(adapted)\n'
                 "        table['delta_vs_frozen'] = {{metric: round(float(adapted[metric]) - float(frozen[metric]), 3) for metric in METRICS}}\n"
                 "        for metric in ('t2i_map', 'accuracy'):\n"
                 '            delta = float(adapted[metric]) - float(frozen[metric])\n'
-                "            table['verdict']['adapted_vs_frozen_' + metric] = 'improved' if delta > 0 else ('no change' if delta == 0 else 'worse')\n"
+                "            table['verdict']['adapted_vs_frozen_' + metric] = point_verdict(delta)  # no success criterion was pre-registered\n"
                 "        table['ap_fell'] = sorted(c for c in classes if after[c]['ap'] < before[c]['ap'])\n"
                 "        table['recall_fell'] = sorted(c for c in classes if after[c]['recall'] < before[c]['recall'])\n"
                 "        table['by_species'] = {{c: {{'n': before[c]['n'], 'frozen_recall': before[c]['recall'], 'adapted_recall': after[c]['recall'], 'frozen_ap': before[c]['ap'], 'adapted_ap': after[c]['ap']}} for c in classes}}\n"
@@ -577,7 +577,15 @@ TEMPLATE = {
                 "development_view = {{'label': dev_label, 'n': len(dev_records), 'note': 'reported in every run for continuity with earlier records; informs no decision' if not USE_BYOD else 'your own test split (exploratory)', **compare(baseline_majority, baseline_neighbour, frozen_dev, adapted_dev, frozen_dev_scientific, adapted_dev_scientific)}}\n"
                 "print({{'validation': {{k: round(float(adapted_val[k]), 3) for k in METRICS}}, 'n': adapted_val['n'], 'note': 'the configuration and the epoch were chosen on these photographs, so these numbers are biased upward'}})\n"
                 "print({{'development_view': {{k: development_view[k] for k in ('label', 'n', 'note', *METRICS, 'verdict')}}}})\n"
-                'fresh_test = None\n'
+                'fresh_test = post_hoc = record_check = fresh_predictions_file = None\n'
+                "run_suffix = output_suffix(Path('outputs/{stem}_evaluation_report.json'), test_look)  # '' / _reproduction_<n> / _exploratory_<n>, once for every file this run writes\n"
+                '\n'
+                '\n'
+                'def suffixed_early(path):\n'
+                '    path = Path(path)\n'
+                '    return path.with_name(path.stem + run_suffix + path.suffix)\n'
+                '\n'
+                '\n'
                 'if preregistered:\n'
                 '    # THE fresh test: scored only here, only under the pre-registered settings. The adapted state is parked in work/ so\n'
                 '    # the frozen model can be scored on the same photographs, then put back.\n'
@@ -589,9 +597,18 @@ TEMPLATE = {
                 '    pipe.restore_base()\n'
                 '    frozen_fresh = pipe.evaluate(fresh_records, classes=classes, class_names_map=display_names)\n'
                 "    frozen_fresh_sci = pipe.evaluate(fresh_records, classes=classes, class_names_map=scientific_names, prompt_template='This is a photo of {{label}}.')\n"
-                '    pipe.load_artifact(parked)\n'
+                '    if adaptation_kept:\n'
+                '        pipe.load_artifact(parked)  # back to the adapted model of record\n'
+                "    fresh_predictions = {{'label': 'per-image fresh-test predictions of this run', 'test_look': test_look, 'rows': prediction_rows(frozen_fresh, adapted_fresh)}}\n"
+                "    fresh_predictions_file = atomic_write_json(suffixed_early('outputs/{stem}_fresh_predictions.json'), fresh_predictions)\n"
                 "    fresh_test = {{'n': len(fresh_records), **compare(majority_baseline(train_records, fresh_records, classes), colour_neighbour_baseline(train_records, fresh_records, classes), frozen_fresh, adapted_fresh, frozen_fresh_sci, adapted_fresh_sci)}}\n"
                 "    print({{'fresh_test': {{k: fresh_test[k] for k in ('n', *METRICS, 'verdict')}}}})\n"
+                "    # Display only; never alters a verdict field. The record (6df20c7) saved no per-image rows, so these numbers come from this run.\n"
+                "    post_hoc = post_hoc_paired(frozen_fresh, adapted_fresh) if adaptation_kept else None\n"
+                "    print({{'post_hoc_paired': post_hoc}})\n"
+                "    record_check = record_match(fresh_test) if test_look == REPRODUCTION_OF_RECORD else None\n"
+                "    if record_check is not None:\n"
+                "        print({{'reproduction_vs_record': 'matches record' if record_check['matches_record'] else 'differs from record', 'differing': [k for k, v in record_check['metrics'].items() if not v['match']]}})\n"
                 'comparison = fresh_test if fresh_test is not None else development_view\n'
                 "for key in ('scientific_name_prompts', 'delta_vs_frozen', 'ap_fell', 'recall_fell', 'by_species'):\n"
                 '    if key in comparison:\n'
@@ -611,23 +628,27 @@ TEMPLATE = {
                 "    'classes': classes,\n"
                 "    'display_names': display_names,\n"
                 "    'fresh_test': fresh_test,\n"
+                "    'post_hoc_paired': post_hoc,\n"
+                "    'reproduction_vs_record': record_check,\n"
+                "    'fresh_predictions_file': str(fresh_predictions_file) if fresh_predictions_file else None,\n"
+                "    'model_of_record': 'adapted' if adaptation_kept else 'frozen (adaptation not kept)',\n"
+                "    'files': {{'train_csv': str(train_csv), 'grid': str(grid_file) if RUN_GRID else None}},\n"
+                "    'runtime': {{'device': str(pipe.device), 'dtype': 'float32', 'torch': torch.__version__, 'transformers': transformers.__version__, 'numpy': numpy.__version__, 'python': platform.python_version()}},\n"
                 "    'development_view': development_view,\n"
                 "    'validation_metrics': adapted_val,\n"
                 "    'adaptation': {{k: v for k, v in adapt_result.items() if k not in ('history', 'trainable_names')}},\n"
                 "    'history': adapt_result['history'],\n"
                 "    'adaptation_seconds': adapt_seconds,\n"
                 '}}\n'
-                "run_suffix = output_suffix(report_path, test_look)  # '' / _reproduction_<n> / _exploratory_<n>, once for every file this run writes\n"
+                "if not adaptation_kept and pipe.adapter is not None:\n"
+                "    pipe.restore_base()  # keep-frozen: the frozen model is the model of record, so Section 9 never exports an adapter\n"
                 '\n'
                 '\n'
-                'def suffixed(path):\n'
-                '    path = Path(path)\n'
-                '    return path.with_name(path.stem + run_suffix + path.suffix)\n'
+                'suffixed = suffixed_early\n'
                 '\n'
                 '\n'
                 'written = suffixed(report_path)  # never overwrites the first pre-registered report (this runtime)\n'
-                "with open(written, 'w', encoding='utf-8') as f:\n"
-                '    json.dump(evaluation_report_payload, f, indent=2, ensure_ascii=False)\n'
+                'atomic_write_json(written, evaluation_report_payload)  # temporary file, then rename: never truncated\n'
                 "print({{'report': str(written), 'test_look': test_look}})"
             ),
         },
@@ -655,21 +676,25 @@ TEMPLATE = {
                 'for image_path, before, after in zip(shape_images, classifications, adapted_classifications, strict=True):\n'
                 "    print({{'image': image_path.name, 'frozen': [(s.label, round(s.score, 3)) for s in before[:2]], 'adapted': [(s.label, round(s.score, 3)) for s in after[:2]]}})\n"
                 "print({{'scene_after_adaptation': {{m['id']: round(m['value'], 3) for m in adapted_scene['metrics']}}, 'verdict': adapted_scene['verdict']}})\n"
-                "with open(suffixed('outputs/{stem}_shapes.json'), 'w', encoding='utf-8') as handle:\n"
-                "    json.dump({{'frozen': classification_rows, 'adapted': [{{'image': p.name, 'scores': [asdict(x) for x in ranking]}} for p, ranking in zip(shape_images, adapted_classifications, strict=True)]}}, handle, indent=2)\n"
+                "atomic_write_json(suffixed('outputs/{stem}_shapes.json'), \n"
+                "    {{'frozen': classification_rows, 'adapted': [{{'image': p.name, 'scores': [asdict(x) for x in ranking]}} for p, ranking in zip(shape_images, adapted_classifications, strict=True)]}})\n"
                 '\n'
                 "artifact_dir = Path('outputs/{stem}_adapter' + run_suffix)\n"
                 'shutil.rmtree(artifact_dir, ignore_errors=True)\n'
-                "pipe.save_artifact(artifact_dir, metadata={{'tutorial': '{stem}', 'data_source': data_source, 'test_look': test_look, 'settings_differing': differing}})\n"
-                "artifact_manifest = json.loads((artifact_dir / 'manifest.json').read_text(encoding='utf-8'))\n"
-                "print({{'artifact': str(artifact_dir), 'format': artifact_manifest['format'], 'tensors': len(artifact_manifest['tensors']), 'bytes': artifact_manifest['files'][0]['bytes'], 'sha256': artifact_manifest['files'][0]['sha256'][:16] + '...'}})\n"
+                'artifact_manifest = parity = None\n'
+                'if pipe.adapter is None:\n'
+                "    print('Adaptation was not kept (keep-frozen rule): the frozen model is the model of record, so no adapter is exported or reloaded.')\n"
+                'else:\n'
+                "    pipe.save_artifact(artifact_dir, metadata={{'tutorial': '{stem}', 'data_source': data_source, 'test_look': test_look, 'settings_differing': differing}})\n"
+                "    artifact_manifest = json.loads((artifact_dir / 'manifest.json').read_text(encoding='utf-8'))\n"
+                "    print({{'artifact': str(artifact_dir), 'format': artifact_manifest['format'], 'tensors': len(artifact_manifest['tensors']), 'bytes': artifact_manifest['files'][0]['bytes'], 'sha256': artifact_manifest['files'][0]['sha256'][:16] + '...'}})\n"
                 '\n'
-                'reloaded = Siglip2Pipeline.from_artifact(artifact_dir, weights_dir=WEIGHTS_DIR, device=pipe.device)\n'
-                "before = pipe.embed_image([r['image'] for r in dev_records[:8]])  # images only: no labels, no metrics\n"
-                "after = reloaded.embed_image([r['image'] for r in dev_records[:8]])\n"
-                "parity = {{'max_abs_difference': float(np.abs(before - after).max()), 'identical_rows': int((np.abs(before - after).max(axis=1) < 1e-5).sum()), 'of': int(before.shape[0])}}\n"
-                "print({{'reload_parity': parity, 'reloaded_best_epoch': reloaded.adapter['best_epoch']}})\n"
-                "assert parity['identical_rows'] == parity['of']\n"
+                '    reloaded = Siglip2Pipeline.from_artifact(artifact_dir, weights_dir=WEIGHTS_DIR, device=pipe.device)\n'
+                "    before = pipe.embed_image([r['image'] for r in dev_records[:8]])  # images only: no labels, no metrics\n"
+                "    after = reloaded.embed_image([r['image'] for r in dev_records[:8]])\n"
+                "    parity = {{'max_abs_difference': float(np.abs(before - after).max()), 'identical_rows': int((np.abs(before - after).max(axis=1) < 1e-5).sum()), 'of': int(before.shape[0])}}\n"
+                "    print({{'reload_parity': parity, 'reloaded_best_epoch': reloaded.adapter['best_epoch']}})\n"
+                "    assert parity['identical_rows'] == parity['of']\n"
                 '\n'
                 "write_provenance(suffixed('outputs/provenance.json'), pipeline=pipe)\n"
                 'result_payload = {{\n'
@@ -678,6 +703,7 @@ TEMPLATE = {
                 "    'settings_differing': differing,\n"
                 "    'evaluation_of_record': RECORDED_EVALUATION or 'see docs/release-verification.md (the first hosted pre-registered run)',\n"
                 "    'grid_selection': grid_selection,\n"
+                "    'reproduction_vs_record': record_check,\n"
                 "    'notebook_source': NOTEBOOK_SOURCE,\n"
                 "    'repository_revision': NOTEBOOK_SOURCE['repository_revision'],\n"
                 "    'model_id': MODEL_ID,\n"
@@ -689,12 +715,11 @@ TEMPLATE = {
                 "    'fresh_test_pins': {{'source': FRESH_TEST_SOURCE, 'photographs': len(FRESH_TEST_RECORDS), 'manifest_sha256': fresh_manifest_digest(), 'masked': FRESH_TEST_MASKED}},\n"
                 "    'inference_contract': {{'input_manifest': input_manifest, 'sanity_checks': checks, 'shapes': {{'names': [p.name for p in shape_images], 'sha256': shape_sha256, 'labels': shape_labels, 'candidate_labels': candidate_labels}}, 'frozen_report': frozen_scene, 'adapted_report': adapted_scene}},\n"
                 "    'comparison': comparison,\n"
-                "    'artifact': {{'dir': str(artifact_dir), 'sha256': artifact_manifest['files'][0]['sha256'], 'bytes': artifact_manifest['files'][0]['bytes'], 'tensors': len(artifact_manifest['tensors'])}},\n"
+                "    'artifact': None if artifact_manifest is None else {{'dir': str(artifact_dir), 'sha256': artifact_manifest['files'][0]['sha256'], 'bytes': artifact_manifest['files'][0]['bytes'], 'tensors': len(artifact_manifest['tensors'])}},\n"
                 "    'reload_parity': parity,\n"
                 "    'runtime': {{'python': platform.python_version(), 'torch': torch.__version__, 'transformers': transformers.__version__, 'numpy': numpy.__version__, 'device': str(pipe.device), 'dtype': 'float32', 'checkpoint_source': pipe.checkpoint_source}},\n"
                 '}}\n'
-                "with open(suffixed('outputs/{stem}_result.json'), 'w', encoding='utf-8') as handle:\n"
-                '    json.dump(result_payload, handle, indent=2, ensure_ascii=False)\n'
+                "atomic_write_json(suffixed('outputs/{stem}_result.json'), result_payload)\n"
                 "print(sorted(os.listdir('outputs')))"
             ),
         },
