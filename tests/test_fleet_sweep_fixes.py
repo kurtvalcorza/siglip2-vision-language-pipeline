@@ -304,14 +304,14 @@ def test_swp_b_byod_path_reads_a_zip_and_refusals_name_the_file(tmp_path, monkey
     good = tmp_path / "mine.zip"
     good.write_bytes(b"PK")
     assert helper(str(good), "zip", (".zip",)) == good
-    with pytest.raises(FileNotFoundError, match="missing.zip"):
+    with pytest.raises(FileNotFoundError, match=r"missing.zip: BYOD path does not exist"):
         helper(str(tmp_path / "missing.zip"), "zip")
     bad = tmp_path / "wrong.tar"
     bad.write_bytes(b"x")
     with pytest.raises(ValueError, match=r"wrong.tar: expected a"):
         helper(str(bad), "zip", (".zip",))
     _no_colab(monkeypatch)
-    with pytest.raises(RuntimeError, match="only in Google Colab"):
+    with pytest.raises(RuntimeError, match=r"^\(no file\): BYOD is on.*only in Google Colab"):
         helper("", "zip")
 
 
@@ -319,7 +319,7 @@ def test_swp_b_cancelled_upload_is_named_and_one_upload_is_saved(tmp_path, monke
     helper = _byod_file(_nb(NB))
     _colab(monkeypatch, lambda: {})
     monkeypatch.chdir(tmp_path)
-    with pytest.raises(ValueError, match="Upload exactly one"):
+    with pytest.raises(ValueError, match=r"^\(no file\): upload exactly one"):
         helper("", "zip")
     _colab(monkeypatch, lambda: {"up.zip": b"1"})
     saved = helper("", "zip", (".zip",))

@@ -167,6 +167,7 @@ TEMPLATE = {
                 'import hashlib\n'
                 'import json\n'
                 'import time\n'
+                'import zipfile\n'
                 'from dataclasses import asdict\n'
                 '\n'
                 'import numpy as np\n'
@@ -199,7 +200,7 @@ TEMPLATE = {
                 "    earlier = sorted(name for name in os.listdir('outputs') if name.endswith('.json') and not name.endswith('run_invalidated.json'))\n"
                 "    with open('outputs/{stem}_run_invalidated.json', 'w', encoding='utf-8') as handle:\n"
                 "        json.dump({{'reason': str(reason), 'files_from_an_earlier_run': earlier}}, handle, indent=2)\n"
-                "    return BYODRefusal(f'BYOD input refused: {{reason}} Fix the upload or BYOD_PATH and run this cell again. Files already in outputs/ are from an earlier run (listed in outputs/{stem}_run_invalidated.json).')\n"
+                "    return BYODRefusal(f'Refused: {{str(reason).rstrip(\".\")}}. Fix the upload or BYOD_PATH and run this cell again. Files already in outputs/ are from an earlier run (listed in outputs/{stem}_run_invalidated.json).')\n"
                 '\n'
                 '\n'
                 "if os.path.exists('outputs/{stem}_run_invalidated.json'):\n"
@@ -211,15 +212,15 @@ TEMPLATE = {
                 '    if str(path).strip():\n'
                 '        source = Path(str(path).strip()).expanduser()\n'
                 '        if not source.is_file():\n'
-                "            raise FileNotFoundError(f'BYOD path {{str(source)!r}} does not exist or is not a file (relative paths start at {{os.getcwd()}}); give the path of one {{kind}}.')\n"
+                "            raise FileNotFoundError(f'{{str(source)}}: BYOD path does not exist or is not a file (relative paths start at {{os.getcwd()}}); give the path of one {{kind}}.')\n"
                 '    else:\n'
                 '        try:\n'
                 '            from google.colab import files\n'
                 '        except ImportError:\n'
-                "            raise RuntimeError(f'BYOD is on but BYOD_PATH is empty, and the upload dialog exists only in Google Colab: copy the {{kind}} into this runtime (or attach it as a Kaggle dataset) and set BYOD_PATH.') from None\n"
+                "            raise RuntimeError(f'(no file): BYOD is on but BYOD_PATH is empty, and the upload dialog exists only in Google Colab: copy the {{kind}} into this runtime (or attach it as a Kaggle dataset) and set BYOD_PATH.') from None\n"
                 '        uploaded = files.upload() or {{}}\n'
                 '        if len(uploaded) != 1:\n'
-                "            raise ValueError(f'Upload exactly one {{kind}} (received {{len(uploaded)}} files; a cancelled dialog sends none). Run this cell again.')\n"
+                "            raise ValueError(f'{{\", \".join(uploaded) or \"(no file)\"}}: upload exactly one {{kind}} (received {{len(uploaded)}} files; a cancelled dialog sends none). Run this cell again.')\n"
                 '        name, payload = next(iter(uploaded.items()))\n'
                 "        source = Path('work') / Path(name).name\n"
                 '        source.parent.mkdir(parents=True, exist_ok=True)\n'
@@ -240,7 +241,7 @@ TEMPLATE = {
                 '        splits = split_dataset(records, seed=SPLIT_SEED)\n'
                 '        for part in splits.values():\n'
                 '            validate_dataset(part, min_records=1)\n'
-                '    except (KeyError, OSError, ValueError) as exc:\n'
+                '    except (KeyError, OSError, ValueError, zipfile.BadZipFile) as exc:  # a .zip that is not a zip archive is refused too\n'
                 "        raise refuse_byod(f'{{byod_path.name}}: {{exc}}.') from None\n"
                 "    data_source = 'BYOD (' + byod_path.name + ')'\n"
                 '    display_names = {{}}\n'
@@ -750,7 +751,7 @@ TEMPLATE = {
         "- **Section 8 says `not scored (exploratory)` although you changed nothing** — read `settings_differing`: a re-run of Section 6 or 7 after Section 7b restores the base model, and a grid that ran on other data does not count. Run Sections 4–8 in order. In the repository's CI the fresh test is masked on purpose (`DIMER_FRESH_TEST_MASK=1`).\n"
         '- **The frozen or adapted numbers differ from the quoted ones by a photograph or two** — expected across hardware and library builds: accuracy on 96 photographs moves in steps of about 1 %. A verdict of `not above the baselines`, `no change` or `worse` is a finding to read, not an error.\n'
         "- **Section 9's parity check fails** — the export or reload is broken; run Sections 7b–9 again. Do not use the artifact.\n"
-        '- **BYOD: "BYOD input refused: …"** — the message names the file and the rule (a missing path, no upload, not a .zip, a missing `labels.csv`, an unreadable image, an image side over 4096 px, a label over 64 characters, too few records, one label only, or a duplicate id). Fix it and run Section 4 again; files already in `outputs/` are from an earlier run and are listed in `outputs/{stem}_run_invalidated.json`.\n'
+        '- **BYOD: "Refused: <file>: …"** — one line, no traceback; it names the file and the rule (a missing path, no upload, not a .zip, a missing `labels.csv`, an unreadable image, an image side over 4096 px, a label over 64 characters, too few records, one label only, or a duplicate id). Fix it and run Section 4 again; files already in `outputs/` are from an earlier run and are listed in `outputs/{stem}_run_invalidated.json`.\n'
         '\n'
         '## Change one thing (next experiments)\n'
         '\n'
