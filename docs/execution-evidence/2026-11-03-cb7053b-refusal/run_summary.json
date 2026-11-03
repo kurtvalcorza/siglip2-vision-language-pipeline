@@ -1,0 +1,75 @@
+{
+  "repo": "siglip2-vision-language-pipeline",
+  "sha": "cb7053b05e4ecfea039c952ee19b5301918666cf",
+  "notebook": "tutorials/siglip2_vision_language_colab.ipynb",
+  "blob": "76a8a0386dc0aec47160ff152bd15466c0ec7624",
+  "gpu": "T4",
+  "session": "suite-siglip2-cb7053b-c27e",
+  "started_utc": "2026-11-03T08:06:22+00:00",
+  "runner": "Colab CLI `colab exec -f` on a fresh session (not a browser Run all)",
+  "overrides": [
+    {
+      "name": "USE_BYOD",
+      "from": "False",
+      "to": "True"
+    },
+    {
+      "name": "BYOD_PATH",
+      "from": "''",
+      "to": "'/etc/hostname'"
+    }
+  ],
+  "run_copy_blob": "c34a05d5b95d56bc70a498510fd86749a86125f6",
+  "run_copy_sha256": "8c58e642273c12c03967c0a6e2417174e9075c2678f65b346486dc2b4871b6c7",
+  "run_copy_note": "refusal run: the run copy is the committed notebook with the listed assignment overrides, cut immediately after the refusal cell and re-serialised (nbformat layout); input_unchanged compares against that copy",
+  "truncated_after_cell": "siglip2_vision_language-24",
+  "refusal_cell_ref": "siglip2_vision_language-24",
+  "refusal_cell_index": 11,
+  "cells_dropped": 20,
+  "code_cells_dropped": 6,
+  "original_sha256": "dc3c1cce12e6f80820cacac943d4db06e2c6c74e78df88304dda316a768e2223",
+  "status": "[suite-siglip2-cb7053b-c27e] gpu-t4-s-usw4b0-2hywlpknkc3pe | Hardware: T4 | Shape: Standard | Variant: GPU | Status: IDLE",
+  "exec_exit_code": 0,
+  "stopped": true,
+  "stop_verified": true,
+  "wall_s": 131.0,
+  "input_unchanged": true,
+  "executed_file": "siglip2_vision_language_colab_cb7053b_colab-cli-t4_output.ipynb",
+  "log_cells": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "log_total": 11,
+  "code_cells": 11,
+  "executed_cells": 4,
+  "errors": [
+    {
+      "cell": "siglip2_vision_language-24",
+      "ename": "IsolatedCellRefusal",
+      "evalue": "Refused: hostname: expected a zip of images with a labels.csv ending in .zip. Fix the upload or BYOD_PATH and run this cell again. Files already in outputs/ are from an earlier run (listed in outputs/siglip2_vision_language_run_invalidated.json)."
+    }
+  ],
+  "execution_counts": [],
+  "sequential": null,
+  "executed_sha256": "4042e2dcc20b127cad67105dd006f830ef4dbed7e6b701bc6233dafd8eb4d5f3",
+  "log_sequential_complete": true,
+  "mode": "expect_refusal",
+  "refusal_line": "Refused: hostname: expected a zip of images with a labels.csv ending in .zip. Fix the upload or BYOD_PATH and run this cell again. Files already in outputs/ are from an earlier run (listed in outputs/siglip2_vision_language_run_invalidated.json).",
+  "halting_cell_index": 11,
+  "halting_cell_id": "siglip2_vision_language-24",
+  "error_cells": [
+    11
+  ],
+  "refusal_fail_reasons": [],
+  "refusal_ok": true,
+  "verdict": "PASS"
+}
